@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NASA Space Apps Challenge 2026 - Exploración 3D Luna y Marte</title>
+  <style>
+    :root {
+      --bg-deep: #050914;
+      --panel-bg: rgba(11, 20, 38, 0.86);
+      --border-cyan: rgba(56, 189, 248, 0.38);
+      --accent-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-mars: #f97316;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body {
+      background: radial-gradient(circle at top, #0c1933 0%, var(--bg-deep) 65%);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 22px;
+      background: rgba(6, 12, 26, 0.92);
+      border-bottom: 1px solid var(--border-cyan);
+      z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .nasa-badge {
+      background: #0b3d91;
+      border: 2px solid #fc3d21;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 11px; letter-spacing: 0.5px;
+    }
+    .brand h1 { font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
+    .brand span { font-size: 11px; color: var(--accent-cyan); display: block; }
+    .controls-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input[type="text"] {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-cyan);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 210px;
+    }
+    .btn {
+      background: rgba(14, 116, 144, 0.35);
+      border: 1px solid var(--accent-cyan);
+      color: #e0f2fe;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover, .btn.active { background: var(--accent-cyan); color: #04101f; font-weight: 600; }
+    
+    /* Deep Space Top Orbit Strip */
+    .orbit-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 8px 22px;
+      background: rgba(8, 16, 32, 0.78);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      z-index: 15;
+    }
+    .orbit-card {
+      background: rgba(15, 28, 52, 0.65);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+    }
+    .orbit-card:hover { border-color: var(--accent-cyan); transform: translateY(-1px); }
+    .orbit-card h4 { font-size: 12px; color: #e2e8f0; }
+    .orbit-card p { font-size: 10px; color: var(--text-muted); }
+    .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(56,189,248,0.18); color: var(--accent-cyan); }
+
+    /* Main Split 3D Viewport */
+    .main-stage {
+      position: relative;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+    .viewport-pane {
+      position: relative;
+      border-right: 1px solid var(--border-cyan);
+      overflow: hidden;
+    }
+    .viewport-pane:last-child { border-right: none; }
+    .pane-header {
+      position: absolute;
+      top: 14px; left: 18px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .pane-header h2 { font-size: 22px; letter-spacing: 2px; text-shadow: 0 2px 10px #000; }
+    .pane-header span { font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.55); padding: 2px 8px; border-radius: 4px; }
+    canvas { width: 100%; height: 100%; display: block; }
+
+    /* Floating Telemetry Card */
+    .telemetry-panel {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--accent-cyan);
+      border-radius: 10px;
+      padding: 16px;
+      z-index: 25;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75);
+      display: none;
+    }
+    .telemetry-panel.visible { display: block; }
+    .telemetry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(148,163,184,0.25); padding-bottom: 8px; margin-bottom: 10px; }
+    .telemetry-header h3 { font-size: 15px; color: var(--accent-cyan); }
+    .close-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+    .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 10px; }
+    .telemetry-grid div { background: rgba(5, 10, 22, 0.6); padding: 6px; border-radius: 5px; }
+    .telemetry-grid strong { display: block; color: var(--text-muted); font-size: 10px; }
+    .telemetry-desc { font-size: 12px; line-height: 1.45; color: #cbd5e1; margin-bottom: 10px; }
+
+    /* Mission Pills Overlay */
+    .mission-list-overlay {
+      position: absolute;
+      bottom: 14px; left: 14px; right: 14px;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      z-index: 12;
+    }
+    .mission-chip {
+      background: rgba(9, 17, 34, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #f8fafc;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: 0.2s;
+    }
+    .mission-chip:hover { background: var(--accent-cyan); color: #050914; font-weight: 600; }
+    .mission-chip.mars { border-color: rgba(249, 115, 22, 0.55); }
+    .mission-chip.mars:hover { background: var(--accent-mars); color: #fff; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-amber); }
+
+    /* Footer Timeline */
+    footer {
+      background: rgba(6, 12, 26, 0.95);
+      border-top: 1px solid var(--border-cyan);
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 20;
+    }
+    .timeline-label { font-size: 12px; color: var(--accent-cyan); font-weight: 600; min-width: 145px; }
+    input[type="range"] { flex: 1; accent-color: var(--accent-cyan); cursor: pointer; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="nasa-badge">NASA</div>
+      <div>
+        <h1>Datos y Recursos de la NASA: Exploración 3D</h1>
+        <span>Catálogo NSSDCA · Space Apps Challenge 2026</span>
+      </div>
+    </div>
+    <div class="controls-bar">
+      <input type="text" id="buscador" placeholder="Buscar nave o misión (ej. Apolo, Ingenuity)..." />
+      <button class="btn" id="btn-wireframe">Modo Malla / Rayos X</button>
+      <label class="btn" style="cursor:pointer;">
+        Cargar .GLB de Blender
+        <input type="file" id="input-glb" accept=".glb,.gltf" style="display:none;" />
+      </label>
+    </div>
+  </header>
+
+  <section class="orbit-strip" id="orbit-strip"></section>
+
+  <main class="main-stage">
+    <div class="viewport-pane" id="pane-luna">
+      <div class="pane-header">
+        <h2>LA LUNA</h2>
+        <span>Arrastra para rotar · Rueda para zoom</span>
+      </div>
+      <div class="mission-list-overlay" id="chips-luna"></div>
+    </div>
+
+    <div class="viewport-pane" id="pane-marte">
+      <div class="pane-header">
+        <h2>MARTE</h2>
+        <span>Arrastra para rotar · Rueda para zoom</span>
+      </div>
+      <div class="mission-list-overlay" id="chips-marte"></div>
+    </div>
+
+    <aside class="telemetry-panel" id="telemetry-panel">
+      <div class="telemetry-header">
+        <h3 id="tel-nombre">Misión NASA</h3>
+        <button class="close-btn" id="tel-close">&times;</button>
+      </div>
+      <div class="telemetry-grid">
+        <div><strong>CUERPO CELESTE</strong><span id="tel-destino">-</span></div>
+        <div><strong>AÑO / ÉPOCA</strong><span id="tel-anio">-</span></div>
+        <div><strong>ESTADO NSSDCA</strong><span id="tel-estado">-</span></div>
+        <div><strong>COORDENADAS</strong><span id="tel-coords">-</span></div>
+      </div>
+      <p class="telemetry-desc" id="tel-desc"></p>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="timeline-label">Línea de Tiempo: <span id="anio-actual">2026</span></div>
+    <input type="range" id="timeline" min="1960" max="2026" value="2026" />
+    <button class="btn" id="btn-reset-cam">Centrar Cámaras</button>
+  </footer>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    const MISIONES = [
+      { id: 'apolo', nombre: 'Módulos Lunares Apolo (Eagle)', zona: 'luna', anio: 1969, estado: 'Estacionado en la Luna', coords: '0°40′26.69″N 23°28′22.69″E', pos: [-1.4, 0.35, -1.1], color: 0xf59e0b, desc: 'Las etapas de descenso de los Módulos Lunares (como el Eagle del Apolo 11) se dejaron atrás para usarlas como plataformas de lanzamiento.' },
+      { id: 'lrv', nombre: 'Vehículos Lunares Exploradores (LRV)', zona: 'luna', anio: 1971, estado: 'Estacionado permanentemente', coords: 'Apolo 15, 16 y 17', pos: [1.3, 0.25, 0.8], color: 0x38bdf8, desc: 'Tres vehículos eléctricos tipo rover lunar conducidos por astronautas en la superficie de la Luna.' },
+      { id: 'alsep', nombre: 'Paquetes científicos de ALSEP', zona: 'luna', anio: 1969, estado: 'Instrumentos inactivos', coords: 'Sitios Apolo 12-17', pos: [-0.4, 0.22, 1.5], color: 0x22d3ee, desc: 'Paquetes de experimentos científicos (sismómetros, retrorreflectores láser, magnetómetros) instalados tras la partida de los astronautas.' },
+      { id: 'sondas_luna', nombre: 'Sondas robóticas de reconocimiento', zona: 'luna', anio: 1966, estado: 'Misión completada', coords: 'Múltiples sitios lunares', pos: [1.7, 0.25, -1.5], color: 0xe2e8f0, desc: 'Sondas enviadas en la década de 1960 (Surveyor / Ranger) para demostrar que los aterrizajes suaves eran posibles.' },
+
+      { id: 'sojourner', nombre: 'Rover Sojourner (Pathfinder)', zona: 'marte', anio: 1997, estado: 'Estacionado permanentemente', coords: '19.13°N 33.22°O (Ares Vallis)', pos: [-1.6, 0.25, -1.2], color: 0xf8fafc, desc: 'El primer rover en operar sobre Marte (1997), desplegado por el módulo de aterrizaje Mars Pathfinder.' },
+      { id: 'spirit_opp', nombre: 'Spirit y Opportunity', zona: 'marte', anio: 2004, estado: 'Monumentos inactivos', coords: 'Cráter Gusev / Meridiani Planum', pos: [0.5, 0.3, 0.2], color: 0xf59e0b, desc: 'Dos vehículos exploradores gemelos que operaron durante años superando ampliamente su vida útil prevista.' },
+      { id: 'viking', nombre: 'Módulos de aterrizaje Viking 1 y 2', zona: 'marte', anio: 1976, estado: 'Inactivos en sitio', coords: 'Chryse Planitia / Utopia Planitia', pos: [-1.1, 0.28, 1.5], color: 0x94a3b8, desc: 'Los primeros módulos de aterrizaje estadounidenses que funcionaron con éxito en Marte (1976).' },
+      { id: 'phoenix_insight', nombre: 'Módulos Phoenix e InSight', zona: 'marte', anio: 2008, estado: 'Sin energía / Finalizados', coords: 'Vastitas Borealis / Elysium Planitia', pos: [1.6, 0.28, 1.3], color: 0x38bdf8, desc: 'Phoenix excavó en busca de hielo de agua en el ártico marciano; InSight registró sismos internos (martemotos).' },
+      { id: 'ingenuity', nombre: 'Helicóptero Ingenuity', zona: 'marte', anio: 2021, estado: 'Artefacto estacionario', coords: 'Cráter Jezero', pos: [0.3, 1.15, 1.6], color: 0xf97316, desc: 'La primera aeronave en realizar vuelo propulsado y controlado en otro planeta. Tras daños en el rotor quedó estacionario.' },
+
+      { id: 'dawn', nombre: 'Nave espacial Dawn', zona: 'espacio', anio: 2007, estado: 'Órbita perpetua en Ceres', coords: 'Cinturón de Asteroides (Vesta y Ceres)', desc: 'Cartografió los protoplanetas Vesta y Ceres. Se quedó sin combustible y permanece en órbita estable alrededor de Ceres.' },
+      { id: 'near', nombre: 'NEAR Shoemaker', zona: 'espacio', anio: 1996, estado: 'Reposando en 433 Eros', coords: 'Asteroide 433 Eros', desc: 'Primera nave espacial en orbitar y aterrizar suavemente sobre la superficie de un asteroide.' },
+      { id: 'pioneer', nombre: 'Pioneer 10 y 11', zona: 'espacio', anio: 1972, estado: 'Trayectoria interestelar', coords: 'Espacio exterior profundo', desc: 'Las primeras sondas espaciales en cruzar el cinturón de asteroides y explorar Júpiter y Saturno.' },
+      { id: 'kepler', nombre: 'Telescopio espacial Kepler', zona: 'espacio', anio: 2009, estado: 'Órbita heliocéntrica a la deriva', coords: 'Órbita siguiendo a la Tierra', desc: 'Telescopio revolucionario que descubrió miles de exoplanetas antes de agotar su combustible.' }
+    ];
+
+    let wireframeMode = false;
+    const allMeshes = [];
+
+    function crearEscenaPlaneta(containerId, colorBase, esMarte) {
+      const container = document.getElementById(containerId);
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(esMarte ? 0x261008 : 0x050914, 0.055);
+
+      const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera.position.set(0, 4.2, 6.2);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.maxPolarAngle = Math.PI / 2.08;
+
+      const ambient = new THREE.AmbientLight(esMarte ? 0xffb088 : 0x94a3b8, 0.65);
+      scene.add(ambient);
+      const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+      sun.position.set(5, 8, 4);
+      scene.add(sun);
+
+      // Terreno procedural con cráteres
+      const geo = new THREE.PlaneGeometry(9, 9, 64, 64);
+      geo.rotateX(-Math.PI / 2);
+      const posAttr = geo.attributes.position;
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i);
+        const z = posAttr.getZ(i);
+        let y = Math.sin(x * 1.1) * Math.cos(z * 1.1) * 0.16;
+        const crater1 = Math.hypot(x + 1.2, z + 0.8);
+        if (crater1 < 1.3) y -= (1.3 - crater1) * 0.28;
+        const crater2 = Math.hypot(x - 1.5, z - 1.1);
+        if (crater2 < 1.0) y -= (1.0 - crater2) * 0.22;
+        posAttr.setY(i, y);
+      }
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({ color: colorBase, roughness: 0.92, metalness: 0.05 });
+      const terrain = new THREE.Mesh(geo, mat);
+      scene.add(terrain);
+      allMeshes.push(terrain);
+
+      // Marcadores 3D interactivos
+      const markers = [];
+      MISIONES.filter(m => m.zona === (esMarte ? 'marte' : 'luna')).forEach(m => {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(
+          new THREE.BoxGeometry(0.32, 0.24, 0.32),
+          new THREE.MeshStandardMaterial({ color: m.color, metalness: 0.6, roughness: 0.3 })
+        );
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.26, 0.34, 24),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = -0.1;
+        group.add(body, ring);
+        group.position.set(...m.pos);
+        group.userData = m;
+        scene.add(group);
+        markers.push(group);
+        allMeshes.push(body);
+      });
+
+      window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        markers.forEach(mk => { mk.children[1].rotation.z += 0.015; });
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      return { scene, camera, controls, markers, reset: () => { camera.position.set(0, 4.2, 6.2); controls.target.set(0, 0, 0); } };
+    }
+
+    const lunaView = crearEscenaPlaneta('pane-luna', 0x64748b, false);
+    const marteView = crearEscenaPlaneta('pane-marte', 0xb45309, true);
+
+    // Poblar botones y tarjetas
+    const chipsLuna = document.getElementById('chips-luna');
+    const chipsMarte = document.getElementById('chips-marte');
+    const orbitStrip = document.getElementById('orbit-strip');
+
+    function abrirTelemetria(m) {
+      document.getElementById('tel-nombre').textContent = m.nombre;
+      document.getElementById('tel-destino').textContent = m.zona.toUpperCase();
+      document.getElementById('tel-anio').textContent = m.anio;
+      document.getElementById('tel-estado').textContent = m.estado;
+      document.getElementById('tel-coords').textContent = m.coords;
+      document.getElementById('tel-desc').textContent = m.desc;
+      document.getElementById('telemetry-panel').classList.add('visible');
+    }
+
+    document.getElementById('tel-close').onclick = () => document.getElementById('telemetry-panel').classList.remove('visible');
+
+    function renderUI(filtroTexto = '', anioMax = 2026) {
+      chipsLuna.innerHTML = '';
+      chipsMarte.innerHTML = '';
+      orbitStrip.innerHTML = '';
+
+      MISIONES.forEach(m => {
+        const coincideTexto = m.nombre.toLowerCase().includes(filtroTexto.toLowerCase()) || m.desc.toLowerCase().includes(filtroTexto.toLowerCase());
+        const visibleAnio = m.anio <= anioMax;
+
+        if (m.zona === 'espacio') {
+          const card = document.createElement('div');
+          card.className = 'orbit-card';
+          card.style.opacity = (coincideTexto && visibleAnio) ? '1' : '0.28';
+          card.innerHTML = `<div><h4>${m.nombre}</h4><p>${m.estado}</p></div><span class="tag">${m.anio}</span>`;
+          card.onclick = () => abrirTelemetria(m);
+          orbitStrip.appendChild(card);
+        } else {
+          const chip = document.createElement('button');
+          chip.className = 'mission-chip' + (m.zona === 'marte' ? ' mars' : '');
+          chip.style.display = (coincideTexto && visibleAnio) ? 'flex' : 'none';
+          chip.innerHTML = `<span class="dot"></span>${m.nombre}`;
+          chip.onclick = () => abrirTelemetria(m);
+          (m.zona === 'luna' ? chipsLuna : chipsMarte).appendChild(chip);
+        }
+      });
+
+      [...lunaView.markers, ...marteView.markers].forEach(mk => {
+        mk.visible = mk.userData.anio <= anioMax;
+      });
+    }
+
+    renderUI();
+
+    document.getElementById('buscador').addEventListener('input', e => {
+      renderUI(e.target.value, parseInt(document.getElementById('timeline').value));
+    });
+
+    document.getElementById('timeline').addEventListener('input', e => {
+      const yr = parseInt(e.target.value);
+      document.getElementById('anio-actual').textContent = yr;
+      renderUI(document.getElementById('buscador').value, yr);
+    });
+
+    document.getElementById('btn-wireframe').addEventListener('click', e => {
+      wireframeMode = !wireframeMode;
+      e.target.classList.toggle('active', wireframeMode);
+      allMeshes.forEach(mesh => { if (mesh.material) mesh.material.wireframe = wireframeMode; });
+    });
+
+    document.getElementById('btn-reset-cam').addEventListener('click', () => {
+      lunaView.reset();
+      marteView.reset();
+    });
+
+    // Cargar archivo .GLB personalizado exportado desde Blender
+    document.getElementById('input-glb').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const loader = new GLTFLoader();
+      loader.load(url, gltf => {
+        gltf.scene.scale.set(0.5, 0.5, 0.5);
+        lunaView.scene.add(gltf.scene);
+        alert('Modelo .GLB cargado en la escena 3D.');
+      });
+    });
+  </script>
+</body>
+</html>
