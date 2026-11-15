@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Abandonados pero no Olvidados · NASA Space Apps Challenge 2026</title>
+  <style>
+    :root {
+      --bg-void: #000000;
+      --gold: #eab308;
+      --gold-soft: rgba(234, 179, 8, 0.22);
+      --gold-border: rgba(234, 179, 8, 0.55);
+      --cyan: #38bdf8;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --glass: rgba(8, 12, 20, 0.72);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Splash Screen cinematografico */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      transition: opacity 1.1s ease, visibility 1.1s ease;
+      cursor: pointer;
+    }
+    #splash-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #splash-screen h1 {
+      font-size: clamp(24px, 5vw, 54px);
+      font-weight: 300;
+      letter-spacing: clamp(8px, 1.8vw, 22px);
+      color: #ffffff;
+      margin-bottom: 14px;
+      text-indent: clamp(8px, 1.8vw, 22px);
+    }
+    #splash-screen p {
+      font-size: clamp(10px, 1.3vw, 13px);
+      letter-spacing: 5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+
+    /* Capa de etiquetas 3D flotantes */
+    #labels-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .space-tag {
+      position: absolute;
+      transform: translate(-50%, -140%);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      color: #e2e8f0;
+      background: rgba(4, 7, 14, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+      pointer-events: auto;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: transform 0.15s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .space-tag:hover {
+      transform: translate(-50%, -148%) scale(1.06);
+      border-color: var(--gold);
+      color: #ffffff;
+    }
+    .space-tag.mission-pin {
+      border-color: rgba(234, 179, 8, 0.55);
+      color: #fef08a;
+    }
+    .space-tag.mission-pin::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin-right: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 8px var(--gold);
+    }
+
+    /* Top Bar minimalista */
+    .top-bar {
+      position: fixed;
+      top: 18px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .brand-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--gold);
+      box-shadow: 0 0 12px rgba(234, 179, 8, 0.3);
+    }
+    .brand-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      color: #f8fafc;
+      text-transform: uppercase;
+    }
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      pointer-events: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .pill-btn {
+      background: rgba(10, 14, 24, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      color: #e2e8f0;
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+    .pill-btn:hover, .pill-btn.active {
+      border-color: var(--gold);
+      color: #000000;
+      background: var(--gold);
+    }
+
+    /* Editorial Info Panel Izquierdo */
+    .editorial-hud {
+      position: fixed;
+      top: 72px;
+      left: 28px;
+      width: min(390px, calc(100vw - 48px));
+      z-index: 12;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .editorial-content {
+      pointer-events: auto;
+    }
+    .back-space-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(12, 16, 26, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f8fafc;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+      backdrop-filter: blur(8px);
+      transition: 0.2s;
+    }
+    .back-space-btn.visible {
+      display: inline-flex;
+    }
+    .back-space-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+    .hero-heading {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(28px, 3.6vw, 44px);
+      font-weight: 500;
+      line-height: 1.08;
+      color: #ffffff;
+      margin-bottom: 12px;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
+    }
+    .hero-desc {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+    }
+    .read-more-link {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .read-more-link:hover {
+      text-decoration: underline;
+    }
+    .extra-details {
+      display: none;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #94a3b8;
+      background: rgba(8, 12, 22, 0.82);
+      border-left: 2px solid var(--gold);
+      padding: 8px 12px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      backdrop-filter: blur(8px);
+    }
+    .extra-details.open {
+      display: block;
+    }
+
+    /* Grid de Telemetria limpio 2x2 */
+    .telemetry-specs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 18px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      margin-bottom: 18px;
+    }
+    .spec-item span {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 3px;
+    }
+    .spec-item strong {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    /* Boton CTA Dorado */
+    .explore-cta {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(234, 179, 8, 0.14);
+      border: 1px solid var(--gold);
+      color: #fef08a;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.22s ease;
+    }
+    .explore-cta.visible {
+      display: inline-flex;
+    }
+    .explore-cta:hover {
+      background: var(--gold);
+      color: #000000;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.45);
+    }
+
+    /* Selector rapido de misiones en Superficie */
+    .surface-missions-bar {
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .surface-missions-bar.visible {
+      display: flex;
+    }
+    .surface-chip {
+      background: rgba(10, 15, 26, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      color: #e2e8f0;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: 0.2s;
+    }
+    .surface-chip:hover, .surface-chip.active {
+      border-color: var(--gold);
+      background: rgba(234, 179, 8, 0.22);
+      color: #fef08a;
+    }
+
+    /* Barra Inferior */
+    .bottom-hud {
+      position: fixed;
+      bottom: 16px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    .sim-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 14, 24, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      padding: 7px 14px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+    }
+    .play-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .play-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .speed-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+    }
+    .year-readout {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gold);
+      min-width: 34px;
+    }
+    input[type="range"]#year-slider {
+      width: 95px;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    /* Dock de planetas/misiones con mini-esferas */
+    .planet-dock {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 14, 24, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      padding: 6px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .dock-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 66px;
+    }
+    .dock-node:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .dock-node.active {
+      color: #ffffff;
+      border-color: var(--gold-border);
+      background: rgba(234, 179, 8, 0.12);
+    }
+    .orb-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      box-shadow: inset -4px -4px 8px rgba(0,0,0,0.65);
+    }
+    .dock-node span {
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Modal Catalogo NSSDCA Completo */
+    #catalog-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(10px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #catalog-modal.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #070b14;
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      border-radius: 18px;
+      max-width: 780px;
+      width: 100%;
+      max-height: 82vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-head h2 {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      color: #ffffff;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .cat-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .cat-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+    .cat-card small {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .cat-card h4 {
+      font-size: 14px;
+      margin: 4px 0 6px;
+      color: #f8fafc;
+    }
+    .cat-card p {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+      .editorial-hud {
+        top: 58px;
+        left: 16px;
+      }
+      .bottom-hud {
+        flex-direction: column;
+        align-items: stretch;
+        left: 12px;
+        right: 12px;
+        bottom: 10px;
+        gap: 8px;
+      }
+      .sim-controls {
+        justify-content: space-between;
+      }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Splash Intro Screen -->
+  <div id="splash-screen">
+    <h1>ABANDONADOS</h1>
+    <p>Pero no olvidados · NASA Space Apps 2026</p>
+  </div>
+
+  <!-- Viewport 3D -->
+  <div id="canvas-container"></div>
+  <div id="labels-layer"></div>
+
+  <!-- Barra Superior -->
+  <header class="top-bar">
+    <div class="brand-pill" id="btn-home">
+      <div class="brand-icon">✦</div>
+      <div class="brand-title">NASA · NSSDCA 3D</div>
+    </div>
+    <div class="top-actions">
+      <button class="pill-btn" id="btn-catalog">Catálogo NSSDCA (15)</button>
+      <button class="pill-btn" id="btn-wireframe">Modo Malla</button>
+      <label class="pill-btn" title="Prueba cualquier archivo .glb exportado desde Blender">
+        + Probar .GLB (Blender)
+        <input type="file" id="glb-loader-input" accept=".glb,.gltf" style="display:none;" />
+      </label>
+    </div>
+  </header>
+
+  <!-- Panel Editorial Izquierdo -->
+  <section class="editorial-hud">
+    <div class="editorial-content">
+      <button class="back-space-btn" id="btn-back-space">← Volver al Sistema Solar</button>
+      <div class="eyebrow" id="hud-eyebrow">SISTEMA SOLAR · CATÁLOGO NSSDCA</div>
+      <h2 class="hero-heading" id="hud-title">Abandonados pero no Olvidados</h2>
+      <p class="hero-desc" id="hud-desc">
+        Historias del equipo espacial dejado atrás en la Luna, Marte y el espacio profundo. Selecciona un destino o nave para seguir su órbita en tiempo real.
+      </p>
+      <button class="read-more-link" id="btn-read-more">Leer más ›</button>
+      <div class="extra-details" id="hud-extra"></div>
+
+      <div class="telemetry-specs">
+        <div class="spec-item">
+          <span>Ubicación / Destino</span>
+          <strong id="spec-loc">Sistema Solar Interior y Exterior</strong>
+        </div>
+        <div class="spec-item">
+          <span>Período Histórico</span>
+          <strong id="spec-year">1960 – 2026</strong>
+        </div>
+        <div class="spec-item">
+          <span>Estado Operativo</span>
+          <strong id="spec-status">Monumentos y Sondas Históricas</strong>
+        </div>
+        <div class="spec-item">
+          <span>Escena / Archivo</span>
+          <strong id="spec-archive">NASA NSSDCA Master Catalog</strong>
+        </div>
+      </div>
+
+      <button class="explore-cta" id="btn-explore-surface">Explorar Superficie 3D</button>
+
+      <!-- Chips rapidos cuando estamos en la superficie de La Luna, Marte o Sol -->
+      <div class="surface-missions-bar" id="surface-chips"></div>
+    </div>
+  </section>
+
+  <!-- Controles Inferiores -->
+  <footer class="bottom-hud">
+    <div class="sim-controls">
+      <button class="play-btn" id="btn-play" title="Pausar / Reanudar Órbitas">❚❚</button>
+      <span class="speed-tag" id="btn-speed" title="Cambiar velocidad orbital">1x ÓRBITA</span>
+      <input type="range" id="year-slider" min="1960" max="2026" value="2026" />
+      <span class="year-readout" id="year-label">2026</span>
+    </div>
+
+    <nav class="planet-dock" id="planet-dock">
+      <button class="dock-node active" data-target="solar">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fde047, #ea580c);"></div>
+        <span>Sistema Solar</span>
+      </button>
+      <button class="dock-node" data-target="sol">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fffbeb, #f59e0b);"></div>
+        <span>El Sol</span>
+      </button>
+      <button class="dock-node" data-target="luna">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #e2e8f0, #475569);"></div>
+        <span>La Luna</span>
+      </button>
+      <button class="dock-node" data-target="marte">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fb923c, #9a3412);"></div>
+        <span>Marte</span>
+      </button>
+      <button class="dock-node" data-target="dawn">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #94a3b8, #334155);"></div>
+        <span>Dawn</span>
+      </button>
+      <button class="dock-node" data-target="near">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #d6d3d1, #57534e);"></div>
+        <span>NEAR Eros</span>
+      </button>
+      <button class="dock-node" data-target="pioneer">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #38bdf8, #1e3a8a);"></div>
+        <span>Pioneer 10/11</span>
+      </button>
+      <button class="dock-node" data-target="kepler">
+        <div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);"></div>
+        <span>Kepler</span>
+      </button>
+    </nav>
+  </footer>
+
+  <!-- Modal Catalogo NSSDCA -->
+  <div id="catalog-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2>Catálogo NSSDCA · Misiones de la NASA</h2>
+        <button class="modal-close" id="btn-close-catalog">&times;</button>
+      </div>
+      <div class="catalog-grid" id="catalog-grid"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // =========================================================================
+    // CONFIGURACION DE ARCHIVOS .GLB DE BLENDER
+    // =========================================================================
+    const BLENDER_GLB_SCENES = {
+      luna: './escena_la_luna.glb',
+      marte: './escena_marte.glb',
+      sol: './escena_sol.glb'
+    };
+
+    // Nodos de espacio profundo y letreros 3D dentro de escena_marte.glb que se ocultan
+    // en la vista de superficie para que no floten encima de Marte
+    const HIDDEN_ON_SURFACE = new Set([
+      'Asteroide_433_Eros',
+      'Dawn',
+      'Pioneer_10',
+      'Pioneer_11',
+      'Kepler',
+      'NEAR_Shoemaker'
+    ]);
+
+    // =========================================================================
+    // 1. BASE DE DATOS COMPLETA NSSDCA
+    // =========================================================================
+    const NSSDCA_DATA = {
+      solar: {
+        eyebrow: 'SISTEMA SOLAR · CATÁLOGO NSSDCA',
+        title: 'Abandonados pero no Olvidados',
+        desc: 'Historias del equipo espacial dejado atrás en la Luna, Marte y el espacio profundo. Haz clic en cualquier cuerpo celeste o usa la barra inferior para viajar hasta él.',
+        extra: 'El Archivo Coordinado de Datos de Ciencias Espaciales de la NASA (NSSDCA) cataloga cada nave, módulo de aterrizaje, rover e instrumento científico enviado fuera de la Tierra, registrando su ubicación final exacta y su estado operativo.',
+        loc: 'Sistema Solar y Espacio Interestelar',
+        year: '1960 – 2026',
+        status: '15 Misiones Catalogadas',
+        archive: 'NSSDCA Master Catalog',
+        ctaText: null
+      },
+      sol: {
+        eyebrow: 'ESTRELLA CENTRAL · EL SOL',
+        title: 'El Sol y Sondas Solares',
+        desc: 'Centro gravitacional del Sistema Solar y destino de misiones históricas de estudio heliosférico como Helios 1, Helios 2 y la Sonda Solar Parker.',
+        extra: 'Las sondas Helios 1 y 2 (lanzadas en 1974 y 1976) permanecen en órbitas heliocéntricas elípticas alrededor del Sol tras completar sus mediciones del viento solar.',
+        loc: 'Centro del Sistema Solar · 0.0 UA',
+        year: '1974 – 2026',
+        status: 'Órbitas Heliocéntricas Activas/Históricas',
+        archive: 'escena_sol.glb',
+        ctaText: 'Explorar Escena 3D del Sol',
+        surfaceMode: 'sol'
+      },
+      luna: {
+        eyebrow: 'SATÉLITE NATURAL · LA LUNA',
+        title: 'La Luna',
+        desc: 'Escenario de los primeros aterrizajes suaves robóticos y de las misiones tripuladas Apolo, donde etapas de descenso, rovers eléctricos y estaciones científicas permanecen intactos.',
+        extra: 'Debido a la ausencia de atmósfera y erosión eólica en la Luna, las etapas de descenso de los Módulos Lunares Apolo, los tres vehículos LRV y los paquetes ALSEP conservan exactamente su configuración original.',
+        loc: 'Órbita Terrestre · 384,400 km',
+        year: '1966 – 1972',
+        status: 'Monumentos Lunares Permanentes',
+        archive: 'escena_la_luna.glb',
+        ctaText: 'Explorar Superficie 3D de La Luna',
+        surfaceMode: 'luna'
+      },
+      marte: {
+        eyebrow: 'CUARTO PLANETA · MARTE',
+        title: 'Marte',
+        desc: 'Hogar de una flota histórica de módulos estacionarios, rovers exploradores y la primera aeronave en volar en otro mundo: el helicóptero Ingenuity.',
+        extra: 'Desde los módulos Viking 1 y 2 en 1976 hasta Sojourner, Spirit, Opportunity, Phoenix, InSight, Curiosity, Perseverance e Ingenuity, Marte conserva los hitos de cinco décadas de exploración.',
+        loc: 'Órbita 1.52 UA · Sistema Solar',
+        year: '1976 – 2026',
+        status: '10 Artefactos en Superficie',
+        archive: 'escena_marte.glb',
+        ctaText: 'Explorar Superficie 3D de Marte',
+        surfaceMode: 'marte'
+      },
+      dawn: {
+        eyebrow: 'CINTURÓN DE ASTEROIDES · ORBITADOR',
+        title: 'Nave Espacial Dawn',
+        desc: 'La nave espacial Dawn cartografió los dos cuerpos más masivos del cinturón de asteroides: el protoplaneta Vesta y el planeta enano Ceres.',
+        extra: 'Impulsada por motores iónicos de xenón, Dawn fue la primera misión en orbitar dos destinos extraterrestres distintos. Tras agotar su hidracina en 2018, permanece en una órbita perpetua alrededor de Ceres.',
+        loc: 'Órbita Perpetua alrededor de Ceres',
+        year: '2007 – 2018',
+        status: 'Sin combustible · Órbita estable',
+        archive: 'NSSDCA ID: 2007-043A',
+        ctaText: null
+      },
+      near: {
+        eyebrow: 'ASTEROIDE CERCANO · 433 EROS',
+        title: 'NEAR Shoemaker',
+        desc: 'Primera nave espacial en orbitar y aterrizar suavemente sobre un asteroide. Quedó reposando en la superficie de 433 Eros.',
+        extra: 'Diseñada originalmente solo como orbitador, NEAR Shoemaker ejecutó un descenso controlado inédito el 12 de febrero de 2001 sobre el asteroide 433 Eros.',
+        loc: 'Superficie del Asteroide 433 Eros',
+        year: '1996 – 2001',
+        status: 'Reposando en 433 Eros',
+        archive: 'NSSDCA ID: 1996-008A',
+        ctaText: null
+      },
+      pioneer: {
+        eyebrow: 'ESPACIO INTERESTELAR · SONDAS GEMELAS',
+        title: 'Pioneer 10 y 11',
+        desc: 'Las primeras sondas espaciales que atravesaron el cinturón de asteroides y exploraron Júpiter y Saturno. Ahora se alejan silenciosamente del sistema solar.',
+        extra: 'Ambas naves portan las placas de aluminio anodizado en oro diseñadas por Carl Sagan y Frank Drake, viajando hacia las estrellas tras agotar la energía de sus RTG.',
+        loc: 'Espacio Interestelar (Más allá de Neptuno)',
+        year: '1972 / 1973',
+        status: 'Alejándose silenciosamente',
+        archive: 'NSSDCA ID: 1972-012A / 1973-019A',
+        ctaText: null
+      },
+      kepler: {
+        eyebrow: 'BÚSQUEDA DE EXOPLANETAS · ÓRBITA SOLAR',
+        title: 'Telescopio Espacial Kepler',
+        desc: 'Telescopio revolucionario para la búsqueda de exoplanetas que se quedó sin combustible y ahora orbita a la deriva siguiendo a la Tierra.',
+        extra: 'Mediante su fotómetro de 95 megapíxeles, Kepler descubrió más de 2,700 exoplanetas confirmados antes de ser desactivado en octubre de 2018.',
+        loc: 'Órbita Heliocéntrica (Siguiendo a la Tierra)',
+        year: '2009 – 2018',
+        status: 'Desactivado · Órbita a la deriva',
+        archive: 'NSSDCA ID: 2009-011A',
+        ctaText: null
+      }
+    };
+
+    // =========================================================================
+    // MISIONES DE SUPERFICIE (VINCULADAS POR NOMBRE DE NODO AL .GLB DE BLENDER)
+    // =========================================================================
+    const SURFACE_MISSIONS = {
+      sol: [
+        {
+          id: 'helios',
+          nodeNames: ['Sondas_Helios', 'Helios'],
+          name: 'Sondas Helios 1 y 2',
+          short: 'Helios 1 y 2',
+          year: 1974,
+          loc: 'Órbita Heliocéntrica Interior (0.29 UA)',
+          status: 'En órbita solar permanente',
+          pos: [0.0, 0.0, 0.0],
+          glbScaleFactor: 1.0,
+          desc: 'Sondas desarrolladas para estudiar los procesos solares a distancia récord del Sol. Tras finalizar su vida operativa, siguen orbitando nuestra estrella.',
+          extra: 'Alcanzaron velocidades máximas de 252,792 km/h en su perihelio.'
+        }
+      ],
+      luna: [
+        {
+          id: 'apolo',
+          nodeNames: ['Modulo_Lunar_Apolo_Eagle', 'Apollo_LM', 'Eagle'],
+          name: 'Módulos Lunares Apolo (Eagle)',
+          short: 'Apolo (Eagle)',
+          year: 1969,
+          loc: 'Mar de la Tranquilidad y sitios Apolo 11–17',
+          status: 'Etapas de descenso estacionadas',
+          pos: [-2.1, 0.0, -1.3],
+          glbScaleFactor: 0.75,
+          desc: 'Las etapas de descenso de los Módulos Lunares (como el Eagle del Apolo 11) se dejaron atrás en la superficie lunar para usarlas como plataformas de lanzamiento hacia la órbita.',
+          extra: 'Cada etapa octogonal recubierta de lámina térmica Kapton dorada sostiene la placa conmemorativa de la misión y el soporte de la bandera.'
+        },
+        {
+          id: 'lrv',
+          nodeNames: ['Vehiculo_Lunar_LRV', 'LRV', 'Lunar_Rover'],
+          name: 'Vehículos Lunares Exploradores (LRV)',
+          short: 'Rover LRV',
+          year: 1971,
+          loc: 'Apolo 15 (Hadley), Apolo 16 y Apolo 17',
+          status: 'Estacionados permanentemente',
+          pos: [1.8, 0.0, 1.1],
+          glbScaleFactor: 0.70,
+          desc: 'Tres vehículos eléctricos conducidos por astronautas en la superficie de la Luna. Estacionados permanentemente tras concluir las caminatas espaciales.',
+          extra: 'Equipados con ruedas de malla de alambre de zinc, tracción en las cuatro ruedas y antena parabólica de alta ganancia.'
+        },
+        {
+          id: 'alsep',
+          nodeNames: ['Paquetes_Cientificos_ALSEP', 'ALSEP'],
+          name: 'Paquetes científicos de ALSEP',
+          short: 'Paquetes ALSEP',
+          year: 1969,
+          loc: 'Sitios de alunizaje Apolo 12 a 17',
+          status: 'Estaciones científicas históricas',
+          pos: [-0.6, 0.0, 2.2],
+          glbScaleFactor: 0.75,
+          desc: 'Paquetes de experimentos de la superficie lunar del programa Apolo (sismómetros, retrorreflectores láser, magnetómetros) que quedaron para investigaciones científicas.',
+          extra: 'Los arreglos retrorreflectores siguen utilizándose hoy desde observatorios terrestres para medir el alejamiento de la Luna.'
+        },
+        {
+          id: 'sondas_luna',
+          nodeNames: ['Sondas_Roboticas_Reconocimiento', 'Surveyor'],
+          name: 'Sondas robóticas de reconocimiento',
+          short: 'Sondas Surveyor',
+          year: 1966,
+          loc: 'Múltiples regiones lunares',
+          status: 'Misión pionera completada',
+          pos: [2.4, 0.0, -2.0],
+          glbScaleFactor: 0.75,
+          desc: 'Sondas enviadas en la década de 1960 (programa Surveyor) para demostrar que los aterrizajes suaves en la Luna eran posibles antes del vuelo tripulado.',
+          extra: 'Analizaron la resistencia mecánica del regolito lunar para confirmar que soportaría el peso del Módulo Lunar Apolo.'
+        }
+      ],
+      marte: [
+        {
+          id: 'viking_1',
+          nodeNames: ['Viking_1', 'Modulos_Viking_1_y_2'],
+          name: 'Módulo de aterrizaje Viking 1',
+          short: 'Viking 1',
+          year: 1976,
+          loc: 'Chryse Planitia · Marte (22.48°N 47.97°O)',
+          status: 'Permanece donde aterrizó',
+          pos: [-0.5, 0.0, -5.2],
+          glbScaleFactor: 0.52,
+          desc: 'Primer módulo de aterrizaje estadounidense en operar con éxito sobre la superficie de Marte (20 de julio de 1976).',
+          extra: 'Envió las primeras fotografías panorámicas en color desde la superficie marciana y analizó muestras de suelo.'
+        },
+        {
+          id: 'viking_2',
+          nodeNames: ['Viking_2'],
+          name: 'Módulo de aterrizaje Viking 2',
+          short: 'Viking 2',
+          year: 1976,
+          loc: 'Utopia Planitia · Marte (47.97°N 225.74°O)',
+          status: 'Permanece donde aterrizó',
+          pos: [-11.0, 0.0, 1.8],
+          glbScaleFactor: 0.62,
+          desc: 'Módulo gemelo que aterrizó en Utopia Planitia en septiembre de 1976, registrando escarcha estacional de agua sobre el suelo marciano.',
+          extra: 'Operó durante 1,281 soles marcianos transmitiendo datos meteorológicos y sísmicos.'
+        },
+        {
+          id: 'sojourner',
+          nodeNames: ['Sojourner', 'Rover_Sojourner'],
+          name: 'Rover Sojourner (Pathfinder)',
+          short: 'Sojourner',
+          year: 1997,
+          loc: 'Ares Vallis · Marte (19.13°N 33.22°O)',
+          status: 'Estacionado permanentemente',
+          pos: [-4.8, 0.0, 2.4],
+          glbScaleFactor: 0.60,
+          desc: 'El primer rover en Marte (1997), desplegado por la estación Mars Pathfinder. Actualmente se encuentra estacionado de forma permanente.',
+          extra: 'Con 10.6 kg de masa y seis ruedas independientes, demostró la viabilidad de la locomoción robótica en otro planeta.'
+        },
+        {
+          id: 'spirit',
+          nodeNames: ['Spirit', 'Rovers_Spirit_y_Opportunity'],
+          name: 'Rover Spirit (MER-A)',
+          short: 'Spirit',
+          year: 2004,
+          loc: 'Cráter Gusev · Marte (14.57°S 175.47°E)',
+          status: 'Monumento inactivo en Marte',
+          pos: [-8.5, 0.0, 7.6],
+          glbScaleFactor: 0.72,
+          desc: 'Vehículo explorador gemelo que recorrió 7.73 km en el cráter Gusev, superando más de 20 veces su misión original de 90 soles.',
+          extra: 'Halló evidencia de antiguos sistemas hidrotermales y sílice amorfa en Marte.'
+        },
+        {
+          id: 'opportunity',
+          nodeNames: ['Opportunity'],
+          name: 'Rover Opportunity (MER-B)',
+          short: 'Opportunity',
+          year: 2004,
+          loc: 'Meridiani Planum · Marte (1.95°S 354.47°E)',
+          status: 'Monumento inactivo en Marte',
+          pos: [-1.8, 0.0, 7.6],
+          glbScaleFactor: 0.72,
+          desc: 'Operó durante casi 15 años (5,352 soles) y recorrió 45.16 km antes de quedar en silencio tras una tormenta de polvo global en 2018.',
+          extra: 'Descubrió hematita y vetas de yeso formadas por agua líquida antigua.'
+        },
+        {
+          id: 'phoenix',
+          nodeNames: ['Phoenix', 'Modulos_Phoenix_e_InSight'],
+          name: 'Módulo de aterrizaje Phoenix',
+          short: 'Phoenix',
+          year: 2008,
+          loc: 'Vastitas Borealis · Marte (68.22°N 234.25°E)',
+          status: 'Sin energía · Misión finalizada',
+          pos: [-10.2, 0.0, -5.5],
+          glbScaleFactor: 0.42,
+          desc: 'Aterrizó en la región ártica de Marte y excavó con su brazo robótico para confirmar directamente la presencia de hielo de agua subsuperficial.',
+          extra: 'Perdió energía al llegar el invierno polar marciano y quedar cubierto por hielo de dióxido de carbono.'
+        },
+        {
+          id: 'insight',
+          nodeNames: ['InSight'],
+          name: 'Módulo geofísico InSight',
+          short: 'InSight',
+          year: 2018,
+          loc: 'Elysium Planitia · Marte (4.50°N 135.62°E)',
+          status: 'Sin energía · Misión finalizada',
+          pos: [10.5, 0.0, -5.8],
+          glbScaleFactor: 0.50,
+          desc: 'Estación geofísica que escuchó el pulso interior de Marte mediante su sismómetro SEIS, detectando más de 1,300 martemotos.',
+          extra: 'Finalizó operaciones en diciembre de 2022 cuando el polvo marciano cubrió sus paneles solares.'
+        },
+        {
+          id: 'curiosity',
+          nodeNames: ['Curiosity'],
+          name: 'Rover Curiosity (MSL)',
+          short: 'Curiosity',
+          year: 2012,
+          loc: 'Cráter Gale / Monte Sharp · Marte',
+          status: 'Laboratorio móvil en Marte',
+          pos: [5.0, 0.0, 7.4],
+          glbScaleFactor: 0.68,
+          desc: 'Laboratorio científico móvil de propulsión nuclear (RTG) que explora las capas sedimentarias del Monte Sharp en el cráter Gale.',
+          extra: 'Confirmó que el cráter Gale albergó lagos y ríos de agua dulce habitables hace miles de millones de años.'
+        },
+        {
+          id: 'perseverance',
+          nodeNames: ['Perseverance'],
+          name: 'Rover Perseverance (Mars 2020)',
+          short: 'Perseverance',
+          year: 2021,
+          loc: 'Cráter Jezero · Marte (18.44°N 77.45°E)',
+          status: 'Exploración astrobiológica en Marte',
+          pos: [11.4, 0.0, 7.0],
+          glbScaleFactor: 0.68,
+          desc: 'Explora el antiguo delta fluvial del cráter Jezero buscando biofirmas pasadas y recolectando núcleos de roca para su futuro retorno a la Tierra.',
+          extra: 'Transportó al helicóptero Ingenuity y produjo oxígeno a partir de CO₂ marciano con el instrumento MOXIE.'
+        },
+        {
+          id: 'ingenuity',
+          nodeNames: ['Ingenuity', 'Helicoptero_Ingenuity'],
+          name: 'Helicóptero Ingenuity',
+          short: 'Ingenuity',
+          year: 2021,
+          loc: 'Campos Airfield / Cráter Jezero · Marte',
+          status: 'Artefacto estacionario (rotor dañado)',
+          pos: [11.0, 0.0, 2.0],
+          glbScaleFactor: 0.52,
+          desc: 'La primera aeronave en realizar un vuelo propulsado y controlado en otro planeta. Sufrió daños en una pala del rotor tras 72 vuelos.',
+          extra: 'Permanece en la superficie como estación meteorológica y monumento histórico de la aviación extraterrestre.'
+        }
+      ]
+    };
+
+    // =========================================================================
+    // 2. INTRO SPLASH
+    // =========================================================================
+    const splash = document.getElementById('splash-screen');
+    setTimeout(() => splash.classList.add('hidden'), 1800);
+    splash.addEventListener('click', () => splash.classList.add('hidden'));
+
+    // =========================================================================
+    // 3. MOTOR THREE.JS + GENERADOR DE TEXTURAS PROCEDURALES HD
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const labelsLayer = document.getElementById('labels-layer');
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 400);
+    camera.position.set(0, 11.5, 18.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 0.8;
+    controls.maxDistance = 85;
+
+    function makePlanetTexture(type) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+
+      if (type === 'sun') {
+        const grad = ctx.createRadialGradient(256, 128, 10, 256, 128, 260);
+        grad.addColorStop(0, '#fff7ed');
+        grad.addColorStop(0.4, '#fbbf24');
+        grad.addColorStop(0.85, '#ea580c');
+        grad.addColorStop(1, '#9a3412');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 256);
+        for (let i = 0; i < 650; i++) {
+          ctx.fillStyle = i % 2 === 0 ? 'rgba(255,251,235,0.16)' : 'rgba(154,52,18,0.22)';
+          ctx.beginPath();
+          ctx.arc(Math.random() * 512, Math.random() * 256, Math.random() * 14 + 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (type === 'earth') {
+        ctx.fillStyle = '#0b3b8c';
+        ctx.fillRect(0, 0, 512, 256);
+        ctx.fillStyle = '#2e7d32';
+        for (let i = 0; i < 48; i++) {
+          ctx.beginPath();
+          ctx.ellipse(Math.random() * 512, 35 + Math.random() * 186, Math.random() * 45 + 12, Math.random() * 25 + 8, Math.random() * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.34)';
+        for (let i = 0; i < 90; i++) {
+          ctx.beginPath();
+          ctx.ellipse(Math.random() * 512, Math.random() * 256, Math.random() * 55 + 10, Math.random() * 7 + 2, 0.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (type === 'moon') {
+        ctx.fillStyle = '#8b919b';
+        ctx.fillRect(0, 0, 512, 256);
+        for (let i = 0; i < 240; i++) {
+          const x = Math.random() * 512;
+          const y = Math.random() * 256;
+          const r = Math.random() * 16 + 2;
+          ctx.fillStyle = i % 3 === 0 ? 'rgba(45,50,58,0.45)' : 'rgba(203,213,225,0.3)';
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (type === 'mars') {
+        ctx.fillStyle = '#b84a1e';
+        ctx.fillRect(0, 0, 512, 256);
+        for (let i = 0; i < 120; i++) {
+          ctx.fillStyle = i % 2 === 0 ? 'rgba(69,20,8,0.35)' : 'rgba(234,118,62,0.3)';
+          ctx.beginPath();
+          ctx.ellipse(Math.random() * 512, 24 + Math.random() * 208, Math.random() * 48 + 8, Math.random() * 18 + 4, Math.random(), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(248,250,252,0.85)';
+        ctx.fillRect(0, 0, 512, 12);
+        ctx.fillRect(0, 244, 512, 12);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      return tex;
+    }
+
+    const texSun = makePlanetTexture('sun');
+    const texEarth = makePlanetTexture('earth');
+    const texMoon = makePlanetTexture('moon');
+    const texMars = makePlanetTexture('mars');
+
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 2600;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i++) {
+      starPositions[i] = (Math.random() - 0.5) * 260;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starField = new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({ color: 0xffffff, size: 0.24, transparent: true, opacity: 0.85 })
+    );
+    scene.add(starField);
+
+    const ambientLight = new THREE.AmbientLight(0x334155, 0.75);
+    scene.add(ambientLight);
+    const sunPointLight = new THREE.PointLight(0xfff5db, 3.6, 160, 0.4);
+    scene.add(sunPointLight);
+
+    const solarSystemGroup = new THREE.Group();
+    const surfaceWorldGroup = new THREE.Group();
+    scene.add(solarSystemGroup);
+    scene.add(surfaceWorldGroup);
+
+    // =========================================================================
+    // 4. MODELOS 3D INTEGRADOS DE RESPALDO
+    // =========================================================================
+    function buildSpacecraftModel(id) {
+      const g = new THREE.Group();
+      const matGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.88, roughness: 0.22 });
+      const matWhite = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.25, roughness: 0.35 });
+      const matDark = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.4 });
+      const matSolar = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness: 0.6, roughness: 0.25 });
+      const matCopper = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+
+      if (id === 'apolo') {
+        const descent = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.28, 8), matGold);
+        descent.position.y = 0.26;
+        g.add(descent);
+        for (let i = 0; i < 4; i++) {
+          const ang = (i * Math.PI) / 2 + Math.PI / 4;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.34), matGold);
+          leg.position.set(Math.cos(ang) * 0.44, 0.16, Math.sin(ang) * 0.44);
+          leg.rotation.z = -Math.cos(ang) * 0.45;
+          leg.rotation.x = Math.sin(ang) * 0.45;
+          const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.02, 12), matGold);
+          pad.position.set(Math.cos(ang) * 0.54, 0.01, Math.sin(ang) * 0.54);
+          g.add(leg, pad);
+        }
+        const ascent = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.28, 0.34), matWhite);
+        ascent.position.y = 0.53;
+        const dish = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.07, 16, 1, true), matWhite);
+        dish.position.set(0.16, 0.72, 0.1);
+        dish.rotation.x = 0.6;
+        g.add(ascent, dish);
+      } else if (id === 'lrv') {
+        const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.34), matGold);
+        chassis.position.y = 0.14;
+        g.add(chassis);
+        [[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]].forEach(([x, z]) => {
+          const w = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 16), matDark);
+          w.rotation.x = Math.PI / 2;
+          w.position.set(x, 0.09, z);
+          g.add(w);
+        });
+        const seat1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.12), matWhite);
+        seat1.position.set(-0.04, 0.22, -0.08);
+        const seat2 = seat1.clone();
+        seat2.position.z = 0.08;
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28), matWhite);
+        mast.position.set(0.22, 0.28, 0.1);
+        const umbrella = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.08, 16, 1, true), matWhite);
+        umbrella.position.set(0.22, 0.42, 0.1);
+        umbrella.rotation.z = -0.35;
+        g.add(seat1, seat2, mast, umbrella);
+      } else if (id === 'alsep') {
+        const central = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.22), matWhite);
+        central.position.y = 0.08;
+        const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.32), matWhite);
+        ant.position.y = 0.28;
+        const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 12), matDark);
+        rtg.position.set(0.32, 0.11, -0.12);
+        const retro = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.14), matSolar);
+        retro.position.set(-0.28, 0.06, 0.16);
+        retro.rotation.x = -0.4;
+        g.add(central, ant, rtg, retro);
+      } else if (id === 'sondas_luna') {
+        const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.24, 6), matWhite);
+        frame.position.y = 0.22;
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42), matWhite);
+        mast.position.y = 0.45;
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.18), matSolar);
+        panel.position.y = 0.66;
+        panel.rotation.z = 0.25;
+        g.add(frame, mast, panel);
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI * 2) / 3;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.3), matWhite);
+          leg.position.set(Math.cos(a) * 0.24, 0.12, Math.sin(a) * 0.24);
+          leg.rotation.z = -Math.cos(a) * 0.5;
+          leg.rotation.x = Math.sin(a) * 0.5;
+          g.add(leg);
+        }
+      } else if (id === 'sojourner') {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.2), matSolar);
+        body.position.y = 0.13;
+        g.add(body);
+        [-0.11, 0, 0.11].forEach(x => {
+          [-0.12, 0.12].forEach(z => {
+            const w = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 12), matDark);
+            w.rotation.x = Math.PI / 2;
+            w.position.set(x, 0.045, z);
+            g.add(w);
+          });
+        });
+      } else if (id === 'spirit' || id === 'opportunity' || id === 'curiosity' || id === 'perseverance') {
+        const scale = (id === 'curiosity' || id === 'perseverance') ? 1.25 : 0.95;
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(0.42 * scale, 0.12 * scale, 0.36 * scale), (id === 'curiosity' || id === 'perseverance') ? matWhite : matGold);
+        deck.position.y = 0.2 * scale;
+        const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.38 * scale, 0.02, 0.46 * scale), matSolar);
+        wingL.position.set(0, 0.27 * scale, 0);
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.34 * scale), matWhite);
+        mast.position.set(0.14 * scale, 0.42 * scale, 0.08 * scale);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.1 * scale, 0.06 * scale, 0.14 * scale), matWhite);
+        head.position.set(0.14 * scale, 0.58 * scale, 0.08 * scale);
+        g.add(deck, wingL, mast, head);
+        [-0.17 * scale, 0, 0.17 * scale].forEach(x => {
+          [-0.21 * scale, 0.21 * scale].forEach(z => {
+            const w = new THREE.Mesh(new THREE.CylinderGeometry(0.065 * scale, 0.065 * scale, 0.045 * scale, 14), matDark);
+            w.rotation.x = Math.PI / 2;
+            w.position.set(x, 0.065 * scale, z);
+            g.add(w);
+          });
+        });
+      } else if (id === 'viking_1' || id === 'viking_2') {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.18, 6), matWhite);
+        body.position.y = 0.22;
+        const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.02, 0.06, 18), matWhite);
+        dish.position.set(-0.1, 0.44, 0);
+        dish.rotation.z = 0.35;
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.025, 0.03), matGold);
+        arm.position.set(0.32, 0.22, 0.1);
+        g.add(body, dish, arm);
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI * 2) / 3;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.24), matWhite);
+          leg.position.set(Math.cos(a) * 0.34, 0.11, Math.sin(a) * 0.34);
+          g.add(leg);
+        }
+      } else if (id === 'phoenix' || id === 'insight') {
+        const deck = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 8), matGold);
+        deck.position.y = 0.2;
+        const fan1 = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.015, 16), matSolar);
+        fan1.position.set(-0.46, 0.25, 0);
+        const fan2 = fan1.clone();
+        fan2.position.x = 0.46;
+        const seis = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), matCopper);
+        seis.position.set(0.05, 0.01, 0.48);
+        g.add(deck, fan1, fan2, seis);
+      } else if (id === 'ingenuity') {
+        const fus = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.14), matGold);
+        fus.position.y = 0.24;
+        const solarTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.015, 0.16), matSolar);
+        solarTop.position.y = 0.44;
+        const rotor1 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.01, 0.045), matDark);
+        rotor1.position.y = 0.35;
+        rotor1.rotation.y = 0.4;
+        const rotor2 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.01, 0.045), matDark);
+        rotor2.position.y = 0.39;
+        rotor2.rotation.y = -0.5;
+        rotor2.rotation.z = 0.12;
+        g.add(fus, solarTop, rotor1, rotor2);
+        for (let i = 0; i < 4; i++) {
+          const a = (i * Math.PI) / 2 + Math.PI / 4;
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.26), matDark);
+          leg.position.set(Math.cos(a) * 0.12, 0.12, Math.sin(a) * 0.12);
+          leg.rotation.z = -Math.cos(a) * 0.45;
+          leg.rotation.x = Math.sin(a) * 0.45;
+          g.add(leg);
+        }
+      } else {
+        const bus = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.14, 8), matGold);
+        const dish = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.1, 20, 1, true), matWhite);
+        dish.rotation.x = Math.PI / 2;
+        dish.position.z = 0.12;
+        const wing1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.01, 0.16), matSolar);
+        wing1.position.x = -0.36;
+        const wing2 = wing1.clone();
+        wing2.position.x = 0.36;
+        g.add(bus, dish, wing1, wing2);
+      }
+
+      return g;
+    }
+
+    // =========================================================================
+    // 5. SISTEMA SOLAR ANIMADO
+    // =========================================================================
+    let dynamicLabels = [];
+
+    function clearLabels() {
+      labelsLayer.innerHTML = '';
+      dynamicLabels = [];
+    }
+
+    function createLabel(text, obj3D, onClick, isMission = false, year = 1960) {
+      const el = document.createElement('div');
+      el.className = 'space-tag' + (isMission ? ' mission-pin' : '');
+      el.textContent = text;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onClick();
+      });
+      labelsLayer.appendChild(el);
+      dynamicLabels.push({ el, obj3D, year });
+    }
+
+    const sunMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 48, 32),
+      new THREE.MeshBasicMaterial({ map: texSun })
+    );
+    const sunGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.95, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending })
+    );
+    solarSystemGroup.add(sunMesh, sunGlow);
+
+    function addOrbitRing(radius, color = 0x334155, opacity = 0.55) {
+      const pts = [];
+      for (let i = 0; i <= 128; i++) {
+        const a = (i / 128) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+      }
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity })
+      );
+      solarSystemGroup.add(line);
+      return line;
+    }
+
+    addOrbitRing(4.8, 0x38bdf8, 0.45);
+    addOrbitRing(7.6, 0xf97316, 0.45);
+    addOrbitRing(10.6, 0x64748b, 0.35);
+
+    const earthOrbitPivot = new THREE.Group();
+    const earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.52, 36, 24),
+      new THREE.MeshStandardMaterial({ map: texEarth, roughness: 0.55 })
+    );
+    earthMesh.position.set(4.8, 0, 0);
+    earthOrbitPivot.add(earthMesh);
+
+    const moonOrbitPivot = new THREE.Group();
+    moonOrbitPivot.position.set(4.8, 0, 0);
+    const moonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.19, 28, 20),
+      new THREE.MeshStandardMaterial({ map: texMoon, roughness: 0.92 })
+    );
+    moonMesh.position.set(0.95, 0, 0);
+    moonOrbitPivot.add(moonMesh);
+    earthOrbitPivot.add(moonOrbitPivot);
+    solarSystemGroup.add(earthOrbitPivot);
+
+    const keplerPivot = new THREE.Group();
+    keplerPivot.rotation.y = -0.55;
+    const keplerProbe = buildSpacecraftModel('probe_dish');
+    keplerProbe.scale.setScalar(0.55);
+    keplerProbe.position.set(5.1, 0.15, 0);
+    keplerPivot.add(keplerProbe);
+    solarSystemGroup.add(keplerPivot);
+
+    const marsOrbitPivot = new THREE.Group();
+    marsOrbitPivot.rotation.y = 2.1;
+    const marsMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.42, 36, 24),
+      new THREE.MeshStandardMaterial({ map: texMars, roughness: 0.85 })
+    );
+    marsMesh.position.set(7.6, 0, 0);
+    marsOrbitPivot.add(marsMesh);
+    solarSystemGroup.add(marsOrbitPivot);
+
+    const dawnOrbitPivot = new THREE.Group();
+    dawnOrbitPivot.rotation.y = 0.8;
+    const ceresMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 24, 18),
+      new THREE.MeshStandardMaterial({ map: texMoon, color: 0x94a3b8, roughness: 0.95 })
+    );
+    ceresMesh.position.set(10.6, 0, 0);
+    const dawnProbe = buildSpacecraftModel('probe_dish');
+    dawnProbe.scale.setScalar(0.55);
+    dawnProbe.position.set(10.6, 0.42, 0.25);
+    dawnOrbitPivot.add(ceresMesh, dawnProbe);
+    solarSystemGroup.add(dawnOrbitPivot);
+
+    const nearPivot = new THREE.Group();
+    nearPivot.rotation.y = 4.1;
+    const erosGeo = new THREE.SphereGeometry(0.22, 20, 14);
+    erosGeo.scale(1.8, 0.75, 0.85);
+    const erosMesh = new THREE.Mesh(
+      erosGeo,
+      new THREE.MeshStandardMaterial({ map: texMoon, color: 0xa8a29e, roughness: 0.95 })
+    );
+    erosMesh.position.set(6.2, 0.35, 0);
+    const nearProbe = buildSpacecraftModel('probe_dish');
+    nearProbe.scale.setScalar(0.45);
+    nearProbe.position.set(6.2, 0.56, 0);
+    nearPivot.add(erosMesh, nearProbe);
+    solarSystemGroup.add(nearPivot);
+
+    const pioneerGroup = new THREE.Group();
+    const p10 = buildSpacecraftModel('probe_dish');
+    p10.scale.setScalar(0.65);
+    p10.position.set(-11.5, 1.8, 7.5);
+    const p11 = buildSpacecraftModel('probe_dish');
+    p11.scale.setScalar(0.65);
+    p11.position.set(12.2, -1.5, -8.2);
+    pioneerGroup.add(p10, p11);
+
+    function addDashedTrajectory(points, color) {
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineDashedMaterial({ color, dashSize: 0.45, gapSize: 0.3, transparent: true, opacity: 0.65 })
+      );
+      line.computeLineDistances();
+      solarSystemGroup.add(line);
+    }
+    addDashedTrajectory([new THREE.Vector3(0,0,0), new THREE.Vector3(-5.5, 0.9, 3.6), new THREE.Vector3(-14, 2.2, 9.2)], 0x38bdf8);
+    addDashedTrajectory([new THREE.Vector3(0,0,0), new THREE.Vector3(6.0, -0.7, -4.0), new THREE.Vector3(14.5, -1.8, -9.8)], 0x38bdf8);
+    solarSystemGroup.add(pioneerGroup);
+
+    const TRACK_TARGETS = {
+      solar: null,
+      sol: sunMesh,
+      luna: moonMesh,
+      marte: marsMesh,
+      dawn: ceresMesh,
+      near: erosMesh,
+      pioneer: p10,
+      kepler: keplerProbe
+    };
+
+    function setupSolarLabels() {
+      clearLabels();
+      createLabel('Sol', sunMesh, () => selectSolarTarget('sol'));
+      createLabel('La Luna (Apolo · LRV · ALSEP)', moonMesh, () => selectSolarTarget('luna'), true);
+      createLabel('Marte (10 Misiones · Rovers)', marsMesh, () => selectSolarTarget('marte'), true);
+      createLabel('Dawn (Vesta y Ceres)', ceresMesh, () => selectSolarTarget('dawn'), true);
+      createLabel('NEAR Shoemaker (433 Eros)', erosMesh, () => selectSolarTarget('near'), true);
+      createLabel('Pioneer 10 y 11', p10, () => selectSolarTarget('pioneer'), true);
+      createLabel('Telescopio Kepler', keplerProbe, () => selectSolarTarget('kepler'), true);
+    }
+
+    // =========================================================================
+    // 6. ESCENAS DE SUPERFICIE 3D (AUTO-AJUSTE DE ESCALA Y MARCADORES .GLB)
+    // =========================================================================
+    let currentSceneMode = 'solar';
+    let currentTargetKey = 'solar';
+    let wireframeEnabled = false;
+    let isPlaying = true;
+    let speedMultiplier = 1;
+    let activeMixer = null;
+
+    function terrainHeightAt(x, z, isMars) {
+      let y = Math.sin(x * 0.75) * Math.cos(z * 0.75) * (isMars ? 0.22 : 0.16);
+      const craters = isMars
+        ? [[-2.0, -1.2, 1.6, 0.28], [1.8, 1.4, 1.4, 0.24], [0.2, -2.2, 1.2, 0.2]]
+        : [[-1.5, -1.0, 1.7, 0.34], [1.9, -1.5, 1.4, 0.28], [0.4, 1.6, 1.5, 0.3]];
+      for (const [cx, cz, rad, depth] of craters) {
+        const d = Math.hypot(x - cx, z - cz);
+        if (d < rad) {
+          const nd = d / rad;
+          y -= depth * (1 - nd * nd);
+        } else if (d < rad * 1.25) {
+          y += depth * 0.18 * Math.sin(((d - rad) / (rad * 0.25)) * Math.PI);
+        }
+      }
+      return y;
+    }
+
+    function registerMissionUI(mission, focusFn, chipsContainer, chipIndex) {
+      const chip = document.createElement('button');
+      chip.className = 'surface-chip';
+      chip.textContent = mission.short;
+      chip.onclick = () => {
+        focusFn();
+        document.querySelectorAll('.surface-chip').forEach((c, i) => c.classList.toggle('active', i === chipIndex));
+      };
+      chipsContainer.appendChild(chip);
+    }
+
+    // Vincula exactamente los marcadores HTML a los nodos 3D reales dentro del .GLB
+    function bindGLBScene(gltfScene, planetKey) {
+      const isMars = planetKey === 'marte';
+      const missions = SURFACE_MISSIONS[planetKey] || [];
+      const chipsContainer = document.getElementById('surface-chips');
+      chipsContainer.innerHTML = '';
+      chipsContainer.classList.add('visible');
+
+      // 1. Ocultar letreros 3D duplicados y sondas de espacio profundo en vistas planetarias
+      if (planetKey === 'marte' || planetKey === 'luna') {
+        gltfScene.traverse((child) => {
+          if (!child.name) return;
+          if (child.name.startsWith('Etiqueta_') || HIDDEN_ON_SURFACE.has(child.name)) {
+            child.visible = false;
+          }
+        });
+      }
+
+      gltfScene.updateMatrixWorld(true);
+
+      // 2. Mapear nodos por nombre exacto o coincidencia parcial
+      const nodeMap = new Map();
+      gltfScene.traverse((child) => {
+        if (child.name) nodeMap.set(child.name, child);
+      });
+
+      let matchedCount = 0;
+
+      missions.forEach((m) => {
+        let targetObj = null;
+        for (const candidate of (m.nodeNames || [])) {
+          if (nodeMap.has(candidate)) {
+            targetObj = nodeMap.get(candidate);
+            break;
+          }
+        }
+        if (!targetObj) return;
+
+        // Normalizar escala del modelo sin despegar su base del terreno
+        if (m.glbScaleFactor && m.glbScaleFactor !== 1.0) {
+          const boxBefore = new THREE.Box3().setFromObject(targetObj);
+          const groundY = boxBefore.min.y;
+          targetObj.scale.multiplyScalar(m.glbScaleFactor);
+          targetObj.updateMatrixWorld(true);
+          const boxAfter = new THREE.Box3().setFromObject(targetObj);
+          targetObj.position.y += (groundY - boxAfter.min.y);
+          targetObj.updateMatrixWorld(true);
+        }
+
+        const box = new THREE.Box3().setFromObject(targetObj);
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        box.getCenter(center);
+        box.getSize(size);
+
+        const anchor = new THREE.Object3D();
+        anchor.position.set(center.x, box.max.y + 0.25, center.z);
+        surfaceWorldGroup.add(anchor);
+
+        const chipIdx = matchedCount++;
+        const focusMission = () => {
+          const prefix = planetKey === 'sol'
+            ? `SOL · MISIÓN ${m.year}`
+            : (isMars ? `MARTE · MISIÓN ${m.year}` : `LA LUNA · MISIÓN ${m.year}`);
+          updateEditorialHUD({
+            eyebrow: prefix,
+            title: m.name,
+            desc: m.desc,
+            extra: m.extra,
+            loc: m.loc,
+            year: String(m.year),
+            status: m.status,
+            archive: BLENDER_GLB_SCENES[planetKey] || 'Blender .GLB',
+            ctaText: null
+          });
+
+          const camDist = Math.max(size.x, size.y, size.z, 1.4) * 2.1;
+          desiredTargetPos.set(center.x, center.y, center.z);
+          desiredCameraPos.set(center.x + camDist * 0.85, center.y + camDist * 0.65, center.z + camDist * 1.15);
+          document.querySelectorAll('.surface-chip').forEach((c, i) => c.classList.toggle('active', i === chipIdx));
+        };
+
+        createLabel(m.short, anchor, focusMission, true, m.year);
+        registerMissionUI(m, focusMission, chipsContainer, chipIdx);
+      });
+
+      // 3. Auto-encuadrar la camara al tamano real del terreno cargado (ej. 30x22 o 12x12)
+      const terrainObj = nodeMap.get('Superficie_Marte') || nodeMap.get('Superficie_La_Luna') || gltfScene;
+      const worldBox = new THREE.Box3().setFromObject(terrainObj);
+      const worldSize = new THREE.Vector3();
+      const worldCenter = new THREE.Vector3();
+      worldBox.getSize(worldSize);
+      worldBox.getCenter(worldCenter);
+
+      const maxSpan = Math.max(worldSize.x, worldSize.z, 12);
+      desiredTargetPos.set(worldCenter.x, worldCenter.y, worldCenter.z);
+      desiredCameraPos.set(worldCenter.x, worldCenter.y + maxSpan * 0.42, worldCenter.z + maxSpan * 0.62);
+    }
+
+    function buildFallbackSurface(planetKey) {
+      const isMars = planetKey === 'marte';
+      const missions = SURFACE_MISSIONS[planetKey] || [];
+      const chipsContainer = document.getElementById('surface-chips');
+      chipsContainer.innerHTML = '';
+      chipsContainer.classList.add('visible');
+
+      if (planetKey === 'sol') {
+        const bigSun = new THREE.Mesh(
+          new THREE.SphereGeometry(2.6, 64, 48),
+          new THREE.MeshBasicMaterial({ map: texSun, wireframe: wireframeEnabled })
+        );
+        const corona = new THREE.Mesh(
+          new THREE.SphereGeometry(3.1, 48, 32),
+          new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending })
+        );
+        surfaceWorldGroup.add(bigSun, corona);
+      } else {
+        const geo = new THREE.PlaneGeometry(26, 20, 120, 120);
+        geo.rotateX(-Math.PI / 2);
+        const posAttr = geo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+          const x = posAttr.getX(i);
+          const z = posAttr.getZ(i);
+          posAttr.setY(i, terrainHeightAt(x, z, isMars));
+        }
+        geo.computeVertexNormals();
+
+        const groundMesh = new THREE.Mesh(
+          geo,
+          new THREE.MeshStandardMaterial({
+            map: isMars ? texMars : texMoon,
+            roughness: 0.94,
+            metalness: 0.04,
+            wireframe: wireframeEnabled
+          })
+        );
+        surfaceWorldGroup.add(groundMesh);
+      }
+
+      missions.forEach((m, idx) => {
+        const [mx, , mz] = m.pos;
+        const my = planetKey === 'sol' ? 0 : terrainHeightAt(mx, mz, isMars);
+
+        if (planetKey !== 'sol') {
+          const model = buildSpacecraftModel(m.id);
+          model.position.set(mx, my, mz);
+          model.traverse(c => { if (c.isMesh) c.material.wireframe = wireframeEnabled; });
+          surfaceWorldGroup.add(model);
+        }
+
+        const anchor = new THREE.Object3D();
+        anchor.position.set(mx, my + 0.55, mz);
+        surfaceWorldGroup.add(anchor);
+
+        const focusMission = () => {
+          const prefix = planetKey === 'sol'
+            ? `SOL · MISIÓN ${m.year}`
+            : (isMars ? `MARTE · MISIÓN ${m.year}` : `LA LUNA · MISIÓN ${m.year}`);
+          updateEditorialHUD({
+            eyebrow: prefix,
+            title: m.name,
+            desc: m.desc,
+            extra: m.extra,
+            loc: m.loc,
+            year: String(m.year),
+            status: m.status,
+            archive: BLENDER_GLB_SCENES[planetKey] || 'Vista 3D Integrada',
+            ctaText: null
+          });
+          desiredCameraPos.set(mx + 1.8, my + 1.5, mz + 2.4);
+          desiredTargetPos.set(mx, my + 0.25, mz);
+          document.querySelectorAll('.surface-chip').forEach((c, i) => c.classList.toggle('active', i === idx));
+        };
+
+        createLabel(m.short, anchor, focusMission, true, m.year);
+        registerMissionUI(m, focusMission, chipsContainer, idx);
+      });
+
+      desiredCameraPos.set(0, 9.5, 14.5);
+      desiredTargetPos.set(0, 0, 0);
+    }
+
+    function enterSurfaceMode(planetKey) {
+      currentSceneMode = planetKey;
+      surfaceWorldGroup.visible = true;
+      solarSystemGroup.visible = false;
+      activeMixer = null;
+      clearLabels();
+
+      while (surfaceWorldGroup.children.length > 0) {
+        surfaceWorldGroup.remove(surfaceWorldGroup.children[0]);
+      }
+
+      const isMars = planetKey === 'marte';
+      scene.fog = planetKey === 'sol' ? null : new THREE.FogExp2(isMars ? 0x1c0b05 : 0x02040a, isMars ? 0.022 : 0.024);
+
+      const dirSun = new THREE.DirectionalLight(isMars ? 0xffedd5 : 0xffffff, 2.8);
+      dirSun.position.set(9, 14, 8);
+      const fillLight = new THREE.HemisphereLight(0x94a3b8, 0x1e293b, 0.9);
+      surfaceWorldGroup.add(dirSun, fillLight);
+
+      document.getElementById('btn-back-space').classList.add('visible');
+      document.getElementById('btn-explore-surface').classList.remove('visible');
+
+      const glbPath = BLENDER_GLB_SCENES[planetKey];
+      const loader = new GLTFLoader();
+
+      if (glbPath) {
+        loader.load(
+          glbPath,
+          (gltf) => {
+            gltf.scene.traverse(child => {
+              if (child.isMesh && child.material) {
+                child.material.wireframe = wireframeEnabled;
+              }
+            });
+            surfaceWorldGroup.add(gltf.scene);
+            if (gltf.animations && gltf.animations.length > 0) {
+              activeMixer = new THREE.AnimationMixer(gltf.scene);
+              gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+            }
+            bindGLBScene(gltf.scene, planetKey);
+            document.getElementById('spec-archive').textContent = `${glbPath.replace('./', '')} (Blender 3D)`;
+          },
+          undefined,
+          () => {
+            buildFallbackSurface(planetKey);
+            document.getElementById('spec-archive').textContent = 'Vista 3D Integrada';
+          }
+        );
+      } else {
+        buildFallbackSurface(planetKey);
+      }
+    }
+
+    function returnToSolarSystem() {
+      currentSceneMode = 'solar';
+      surfaceWorldGroup.visible = false;
+      solarSystemGroup.visible = true;
+      activeMixer = null;
+      scene.fog = null;
+      document.getElementById('btn-back-space').classList.remove('visible');
+      document.getElementById('surface-chips').classList.remove('visible');
+      setupSolarLabels();
+      selectSolarTarget('solar');
+    }
+
+    // =========================================================================
+    // 7. ACTUALIZACION DE UI Y CAMARA SUAVE
+    // =========================================================================
+    const desiredCameraPos = new THREE.Vector3(0, 11.5, 18.5);
+    const desiredTargetPos = new THREE.Vector3(0, 0, 0);
+
+    function updateEditorialHUD(info) {
+      document.getElementById('hud-eyebrow').textContent = info.eyebrow;
+      document.getElementById('hud-title').textContent = info.title;
+      document.getElementById('hud-desc').textContent = info.desc;
+      document.getElementById('hud-extra').textContent = info.extra || '';
+      document.getElementById('hud-extra').classList.remove('open');
+      document.getElementById('spec-loc').textContent = info.loc;
+      document.getElementById('spec-year').textContent = info.year;
+      document.getElementById('spec-status').textContent = info.status;
+      document.getElementById('spec-archive').textContent = info.archive;
+
+      const cta = document.getElementById('btn-explore-surface');
+      if (info.ctaText && currentSceneMode === 'solar') {
+        cta.textContent = info.ctaText;
+        cta.classList.add('visible');
+        cta.onclick = () => enterSurfaceMode(info.surfaceMode);
+      } else {
+        cta.classList.remove('visible');
+      }
+    }
+
+    function selectSolarTarget(key) {
+      if (currentSceneMode !== 'solar') {
+        returnToSolarSystem();
+      }
+      currentTargetKey = key;
+      document.querySelectorAll('.dock-node').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.target === key);
+      });
+      updateEditorialHUD(NSSDCA_DATA[key]);
+
+      if (key === 'solar') {
+        desiredCameraPos.set(0, 11.5, 18.5);
+        desiredTargetPos.set(0, 0, 0);
+      }
+    }
+
+    document.querySelectorAll('.dock-node').forEach(btn => {
+      btn.addEventListener('click', () => selectSolarTarget(btn.dataset.target));
+    });
+
+    document.getElementById('btn-home').addEventListener('click', () => selectSolarTarget('solar'));
+    document.getElementById('btn-back-space').addEventListener('click', returnToSolarSystem);
+
+    document.getElementById('btn-read-more').addEventListener('click', () => {
+      document.getElementById('hud-extra').classList.toggle('open');
+    });
+
+    document.getElementById('btn-play').addEventListener('click', (e) => {
+      isPlaying = !isPlaying;
+      e.target.textContent = isPlaying ? '❚❚' : '▶';
+    });
+
+    const speeds = [1, 5, 15];
+    let speedIdx = 0;
+    document.getElementById('btn-speed').addEventListener('click', (e) => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      speedMultiplier = speeds[speedIdx];
+      e.target.textContent = `${speedMultiplier}x ÓRBITA`;
+    });
+
+    document.getElementById('year-slider').addEventListener('input', (e) => {
+      const yr = parseInt(e.target.value, 10);
+      document.getElementById('year-label').textContent = yr;
+      if (currentSceneMode !== 'solar') {
+        dynamicLabels.forEach((item) => {
+          item.el.style.opacity = item.year <= yr ? '1' : '0.2';
+        });
+      }
+    });
+
+    document.getElementById('btn-wireframe').addEventListener('click', (e) => {
+      wireframeEnabled = !wireframeEnabled;
+      e.target.classList.toggle('active', wireframeEnabled);
+      scene.traverse(obj => {
+        if (obj.isMesh && obj.material && obj !== sunGlow) {
+          obj.material.wireframe = wireframeEnabled;
+        }
+      });
+    });
+
+    // Boton de prueba manual de .GLB desde Blender (con auto-ajuste de marcadores)
+    document.getElementById('glb-loader-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const loader = new GLTFLoader();
+      loader.load(url, (gltf) => {
+        const lowerName = file.name.toLowerCase();
+        const detectedMode = lowerName.includes('luna') ? 'luna' : (lowerName.includes('sol') ? 'sol' : 'marte');
+        currentSceneMode = detectedMode;
+        surfaceWorldGroup.visible = true;
+        solarSystemGroup.visible = false;
+        scene.fog = null;
+        while (surfaceWorldGroup.children.length > 0) {
+          surfaceWorldGroup.remove(surfaceWorldGroup.children[0]);
+        }
+        clearLabels();
+        surfaceWorldGroup.add(gltf.scene);
+        if (gltf.animations && gltf.animations.length > 0) {
+          activeMixer = new THREE.AnimationMixer(gltf.scene);
+          gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+        }
+        const light = new THREE.DirectionalLight(0xffffff, 2.8);
+        light.position.set(9, 14, 8);
+        const hemi = new THREE.HemisphereLight(0x94a3b8, 0x1e293b, 0.9);
+        surfaceWorldGroup.add(light, hemi);
+
+        bindGLBScene(gltf.scene, detectedMode);
+
+        document.getElementById('btn-back-space').classList.add('visible');
+        document.getElementById('btn-explore-surface').classList.remove('visible');
+        updateEditorialHUD({
+          eyebrow: 'VISTA PREVIA · BLENDER .GLB',
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          desc: 'Archivo exportado desde Blender cargado y calibrado automáticamente.',
+          extra: 'Los marcadores se ajustaron a las coordenadas y escalas reales de cada objeto 3D en el archivo.',
+          loc: 'Visor WebGL Tiempo Real',
+          year: '2026',
+          status: 'Vista Previa Activa',
+          archive: file.name,
+          ctaText: null
+        });
+      });
+    });
+
+    // Modal Catalogo NSSDCA
+    const catalogGrid = document.getElementById('catalog-grid');
+    const allCatalogEntries = [
+      ...SURFACE_MISSIONS.luna.map(m => ({ ...m, zone: 'La Luna', mode: 'luna' })),
+      ...SURFACE_MISSIONS.marte.map(m => ({ ...m, zone: 'Marte', mode: 'marte' })),
+      { name: 'Nave espacial Dawn', zone: 'Cinturón de Asteroides', year: 2007, desc: NSSDCA_DATA.dawn.desc, targetKey: 'dawn' },
+      { name: 'NEAR Shoemaker', zone: 'Asteroide 433 Eros', year: 1996, desc: NSSDCA_DATA.near.desc, targetKey: 'near' },
+      { name: 'Pioneer 10 y 11', zone: 'Espacio Interestelar', year: 1972, desc: NSSDCA_DATA.pioneer.desc, targetKey: 'pioneer' },
+      { name: 'Telescopio espacial Kepler', zone: 'Órbita Heliocéntrica', year: 2009, desc: NSSDCA_DATA.kepler.desc, targetKey: 'kepler' }
+    ];
+    allCatalogEntries.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'cat-card';
+      card.innerHTML = `<small>${item.zone} · ${item.year}</small><h4>${item.name}</h4><p>${item.desc}</p>`;
+      card.onclick = () => {
+        document.getElementById('catalog-modal').classList.remove('open');
+        if (item.mode) {
+          enterSurfaceMode(item.mode);
+        } else {
+          selectSolarTarget(item.targetKey);
+        }
+      };
+      catalogGrid.appendChild(card);
+    });
+
+    document.getElementById('btn-catalog').onclick = () => document.getElementById('catalog-modal').classList.add('open');
+    document.getElementById('btn-close-catalog').onclick = () => document.getElementById('catalog-modal').classList.remove('open');
+
+    // =========================================================================
+    // 8. BUCLE PRINCIPAL DE ANIMACION
+    // =========================================================================
+    setupSolarLabels();
+    const clock = new THREE.Clock();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    const worldPosVec = new THREE.Vector3();
+    const projVec = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      if (activeMixer && isPlaying) {
+        activeMixer.update(delta * speedMultiplier);
+      }
+
+      if (isPlaying && currentSceneMode === 'solar') {
+        const dt = 0.0022 * speedMultiplier;
+        earthOrbitPivot.rotation.y += dt;
+        moonOrbitPivot.rotation.y += dt * 6.5;
+        keplerPivot.rotation.y += dt * 0.96;
+        marsOrbitPivot.rotation.y += dt * 0.53;
+        dawnOrbitPivot.rotation.y += dt * 0.28;
+        nearPivot.rotation.y += dt * 0.42;
+        earthMesh.rotation.y += 0.01;
+        marsMesh.rotation.y += 0.009;
+      }
+
+      if (currentSceneMode === 'solar' && currentTargetKey !== 'solar' && TRACK_TARGETS[currentTargetKey]) {
+        TRACK_TARGETS[currentTargetKey].getWorldPosition(worldPosVec);
+        controls.target.lerp(worldPosVec, 0.08);
+        const offset = currentTargetKey === 'luna'
+          ? new THREE.Vector3(1.1, 0.8, 1.5)
+          : (currentTargetKey === 'sol' ? new THREE.Vector3(0, 2.2, 5.2) : new THREE.Vector3(1.8, 1.2, 2.4));
+        desiredCameraPos.copy(worldPosVec).add(offset);
+        camera.position.lerp(desiredCameraPos, 0.06);
+      } else {
+        controls.target.lerp(desiredTargetPos, 0.08);
+        camera.position.lerp(desiredCameraPos, 0.06);
+      }
+
+      controls.update();
+
+      dynamicLabels.forEach(({ el, obj3D }) => {
+        obj3D.getWorldPosition(projVec);
+        projVec.project(camera);
+        if (projVec.z < 1) {
+          const sx = (projVec.x * 0.5 + 0.5) * window.innerWidth;
+          const sy = (-projVec.y * 0.5 + 0.5) * window.innerHeight;
+          el.style.left = `${sx}px`;
+          el.style.top = `${sy}px`;
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
