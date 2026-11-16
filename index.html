@@ -1,0 +1,2026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forgotten Giants · NASA Space Apps Challenge 2026</title>
+<style>
+:root {
+--bg-void: #000000;
+--gold: #eab308;
+--gold-soft: rgba(234, 179, 8, 0.22);
+--gold-border: rgba(234, 179, 8, 0.55);
+--cyan: #38bdf8;
+--text-primary: #f8fafc;
+--text-secondary: #94a3b8;
+--glass: rgba(8, 12, 20, 0.72);
+}
+​* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+}
+​body {
+background: var(--bg-void);
+color: var(--text-primary);
+width: 100vw;
+height: 100vh;
+overflow: hidden;
+user-select: none;
+}
+​#canvas-container {
+position: fixed;
+inset: 0;
+z-index: 1;
+}
+​/* Cinematic Splash Screen */
+#splash-screen {
+position: fixed;
+inset: 0;
+background: #000000;
+z-index: 100;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+text-align: center;
+padding: 24px;
+transition: opacity 1.1s ease, visibility 1.1s ease;
+cursor: pointer;
+}
+#splash-screen.hidden {
+opacity: 0;
+visibility: hidden;
+pointer-events: none;
+}
+#splash-screen h1 {
+font-size: clamp(24px, 5vw, 54px);
+font-weight: 300;
+letter-spacing: clamp(8px, 1.8vw, 22px);
+color: #ffffff;
+margin-bottom: 14px;
+text-indent: clamp(8px, 1.8vw, 22px);
+}
+#splash-screen p {
+font-size: clamp(10px, 1.3vw, 13px);
+letter-spacing: 5px;
+color: #94a3b8;
+text-transform: uppercase;
+}
+​/* 3D Floating Labels Layer */
+#labels-layer {
+position: fixed;
+inset: 0;
+pointer-events: none;
+z-index: 4;
+}
+.space-tag {
+position: absolute;
+transform: translate(-50%, -140%);
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.6px;
+color: #e2e8f0;
+background: rgba(4, 7, 14, 0.82);
+border: 1px solid rgba(148, 163, 184, 0.28);
+padding: 4px 10px;
+border-radius: 999px;
+white-space: nowrap;
+pointer-events: auto;
+cursor: pointer;
+backdrop-filter: blur(6px);
+transition: transform 0.15s ease, border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.space-tag:hover, .space-tag.active-pin {
+transform: translate(-50%, -148%) scale(1.07);
+border-color: var(--gold);
+background: rgba(234, 179, 8, 0.25);
+color: #ffffff;
+}
+.space-tag.mission-pin {
+border-color: rgba(234, 179, 8, 0.6);
+color: #fef08a;
+}
+.space-tag.mission-pin::before {
+content: '';
+display: inline-block;
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: var(--gold);
+margin-right: 6px;
+vertical-align: middle;
+box-shadow: 0 0 8px var(--gold);
+}
+​/* Minimalist Top Bar */
+.top-bar {
+position: fixed;
+top: 18px;
+left: 24px;
+right: 24px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+z-index: 15;
+pointer-events: none;
+}
+.brand-pill {
+display: inline-flex;
+align-items: center;
+gap: 10px;
+pointer-events: auto;
+cursor: pointer;
+}
+.brand-icon {
+width: 26px;
+height: 26px;
+border-radius: 50%;
+border: 1.5px solid var(--gold);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 11px;
+color: var(--gold);
+box-shadow: 0 0 12px rgba(234, 179, 8, 0.3);
+}
+.brand-title {
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 2.5px;
+color: #f8fafc;
+text-transform: uppercase;
+}
+.top-actions {
+display: flex;
+gap: 8px;
+align-items: center;
+pointer-events: auto;
+flex-wrap: wrap;
+justify-content: flex-end;
+}
+.pill-btn {
+background: rgba(10, 14, 24, 0.78);
+border: 1px solid rgba(148, 163, 184, 0.28);
+color: #e2e8f0;
+padding: 6px 13px;
+border-radius: 999px;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.4px;
+cursor: pointer;
+backdrop-filter: blur(10px);
+transition: all 0.2s ease;
+}
+.pill-btn:hover, .pill-btn.active {
+border-color: var(--gold);
+color: #000000;
+background: var(--gold);
+}
+​/* Left Editorial Info Panel */
+.editorial-hud {
+position: fixed;
+top: 72px;
+left: 28px;
+width: min(390px, calc(100vw - 48px));
+z-index: 12;
+pointer-events: none;
+transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.editorial-content {
+pointer-events: auto;
+}
+.back-space-btn {
+display: none;
+align-items: center;
+gap: 6px;
+background: rgba(12, 16, 26, 0.85);
+border: 1px solid rgba(148, 163, 184, 0.3);
+color: #f8fafc;
+padding: 6px 14px;
+border-radius: 999px;
+font-size: 12px;
+font-weight: 600;
+cursor: pointer;
+margin-bottom: 16px;
+backdrop-filter: blur(8px);
+transition: 0.2s;
+}
+.back-space-btn.visible {
+display: inline-flex;
+}
+.back-space-btn:hover {
+border-color: var(--gold);
+color: var(--gold);
+}
+.eyebrow {
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+color: var(--gold);
+margin-bottom: 6px;
+}
+.hero-heading {
+font-family: Georgia, 'Times New Roman', serif;
+font-size: clamp(28px, 3.6vw, 44px);
+font-weight: 500;
+line-height: 1.08;
+color: #ffffff;
+margin-bottom: 12px;
+text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
+}
+.hero-desc {
+font-size: 13px;
+line-height: 1.55;
+color: #cbd5e1;
+margin-bottom: 8px;
+text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+}
+.read-more-link {
+display: inline-block;
+font-size: 12px;
+font-weight: 600;
+color: var(--gold);
+background: none;
+border: none;
+cursor: pointer;
+margin-bottom: 16px;
+}
+.read-more-link:hover {
+text-decoration: underline;
+}
+.extra-details {
+display: none;
+font-size: 12px;
+line-height: 1.5;
+color: #94a3b8;
+background: rgba(8, 12, 22, 0.82);
+border-left: 2px solid var(--gold);
+padding: 8px 12px;
+border-radius: 0 8px 8px 0;
+margin-bottom: 16px;
+backdrop-filter: blur(8px);
+}
+.extra-details.open {
+display: block;
+}
+​/* Clean 2x2 Telemetry Grid */
+.telemetry-specs {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px 18px;
+padding-top: 12px;
+border-top: 1px solid rgba(148, 163, 184, 0.2);
+margin-bottom: 18px;
+}
+.spec-item span {
+display: block;
+font-size: 9px;
+font-weight: 700;
+letter-spacing: 1.4px;
+text-transform: uppercase;
+color: #64748b;
+margin-bottom: 3px;
+}
+.spec-item strong {
+font-size: 13px;
+font-weight: 600;
+color: #f1f5f9;
+}
+​/* Gold CTA Button */
+.explore-cta {
+display: none;
+align-items: center;
+gap: 8px;
+background: rgba(234, 179, 8, 0.14);
+border: 1px solid var(--gold);
+color: #fef08a;
+padding: 9px 18px;
+border-radius: 999px;
+font-size: 12px;
+font-weight: 600;
+cursor: pointer;
+backdrop-filter: blur(8px);
+transition: all 0.22s ease;
+}
+.explore-cta.visible {
+display: inline-flex;
+}
+.explore-cta:hover {
+background: var(--gold);
+color: #000000;
+box-shadow: 0 0 20px rgba(234, 179, 8, 0.45);
+}
+​/* Surface Quick Mission Selector */
+.surface-missions-bar {
+display: none;
+flex-wrap: wrap;
+gap: 6px;
+margin-top: 14px;
+max-height: 165px;
+overflow-y: auto;
+}
+.surface-missions-bar.visible {
+display: flex;
+}
+.surface-chip {
+background: rgba(10, 15, 26, 0.85);
+border: 1px solid rgba(148, 163, 184, 0.3);
+color: #e2e8f0;
+padding: 5px 11px;
+border-radius: 999px;
+font-size: 11px;
+cursor: pointer;
+backdrop-filter: blur(6px);
+transition: 0.2s;
+}
+.surface-chip:hover, .surface-chip.active {
+border-color: var(--gold);
+background: rgba(234, 179, 8, 0.25);
+color: #fef08a;
+}
+​/* Bottom Bar */
+.bottom-hud {
+position: fixed;
+bottom: 16px;
+left: 24px;
+right: 24px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 16px;
+z-index: 15;
+pointer-events: none;
+}
+​.sim-controls {
+display: flex;
+align-items: center;
+gap: 10px;
+background: rgba(10, 14, 24, 0.78);
+border: 1px solid rgba(148, 163, 184, 0.22);
+padding: 7px 14px;
+border-radius: 999px;
+backdrop-filter: blur(12px);
+pointer-events: auto;
+}
+.play-btn {
+width: 26px;
+height: 26px;
+border-radius: 50%;
+border: 1px solid rgba(255, 255, 255, 0.3);
+background: rgba(255, 255, 255, 0.08);
+color: #ffffff;
+font-size: 10px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.play-btn:hover {
+border-color: var(--gold);
+color: var(--gold);
+}
+.speed-tag {
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 0.8px;
+color: #cbd5e1;
+cursor: pointer;
+padding: 2px 6px;
+border-radius: 4px;
+background: rgba(255,255,255,0.06);
+}
+.year-readout {
+font-size: 11px;
+font-weight: 700;
+color: var(--gold);
+min-width: 34px;
+}
+input[type="range"]#year-slider {
+width: 95px;
+accent-color: var(--gold);
+cursor: pointer;
+}
+​/* Planet/Mission Dock with Mini-Spheres */
+.planet-dock {
+display: flex;
+align-items: center;
+gap: 6px;
+background: rgba(10, 14, 24, 0.82);
+border: 1px solid rgba(148, 163, 184, 0.22);
+padding: 6px 12px;
+border-radius: 20px;
+backdrop-filter: blur(12px);
+pointer-events: auto;
+overflow-x: auto;
+max-width: 100%;
+}
+.dock-node {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 4px;
+padding: 5px 10px;
+border-radius: 12px;
+border: 1px solid transparent;
+background: transparent;
+color: #94a3b8;
+cursor: pointer;
+transition: all 0.2s ease;
+min-width: 66px;
+}
+.dock-node:hover {
+color: #ffffff;
+background: rgba(255, 255, 255, 0.05);
+}
+.dock-node.active {
+color: #ffffff;
+border-color: var(--gold-border);
+background: rgba(234, 179, 8, 0.12);
+}
+.orb-icon {
+width: 22px;
+height: 22px;
+border-radius: 50%;
+box-shadow: inset -4px -4px 8px rgba(0,0,0,0.65);
+}
+.dock-node span {
+font-size: 10px;
+font-weight: 600;
+white-space: nowrap;
+}
+​/* Full NSSDCA Catalog Modal */
+#catalog-modal {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.82);
+backdrop-filter: blur(10px);
+z-index: 50;
+display: none;
+align-items: center;
+justify-content: center;
+padding: 20px;
+}
+#catalog-modal.open {
+display: flex;
+}
+.modal-box {
+background: #070b14;
+border: 1px solid rgba(234, 179, 8, 0.4);
+border-radius: 18px;
+max-width: 780px;
+width: 100%;
+max-height: 82vh;
+overflow-y: auto;
+padding: 24px;
+}
+.modal-head {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+padding-bottom: 12px;
+margin-bottom: 16px;
+}
+.modal-head h2 {
+font-family: Georgia, serif;
+font-size: 22px;
+color: #ffffff;
+}
+.modal-close {
+background: none;
+border: none;
+color: #94a3b8;
+font-size: 24px;
+cursor: pointer;
+}
+.catalog-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+gap: 12px;
+}
+.cat-card {
+background: rgba(15, 23, 42, 0.75);
+border: 1px solid rgba(148, 163, 184, 0.2);
+border-radius: 12px;
+padding: 12px;
+cursor: pointer;
+transition: 0.2s;
+}
+.cat-card:hover {
+border-color: var(--gold);
+transform: translateY(-2px);
+}
+.cat-card small {
+color: var(--gold);
+font-size: 10px;
+font-weight: 700;
+text-transform: uppercase;
+}
+.cat-card h4 {
+font-size: 14px;
+margin: 4px 0 6px;
+color: #f8fafc;
+}
+.cat-card p {
+font-size: 11px;
+color: #94a3b8;
+line-height: 1.4;
+}
+​@media (max-width: 768px) {
+.editorial-hud {
+top: 58px;
+left: 16px;
+}
+.bottom-hud {
+flex-direction: column;
+align-items: stretch;
+left: 12px;
+right: 12px;
+bottom: 10px;
+gap: 8px;
+}
+.sim-controls {
+justify-content: space-between;
+}
+}
+</style>
+<script type="importmap">
+{
+"imports": {
+"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}
+}
+</script>
+</head>
+<body>
+<!-- Splash Intro Screen -->
+<div id="splash-screen">
+<h1>FORGOTTEN GIANTS</h1>
+<p>NASA Space Apps Challenge 2026</p>
+</div>
+​<!-- 3D Viewport -->
+<div id="canvas-container"></div>
+<div id="labels-layer"></div>
+​<!-- Top Bar -->
+<header class="top-bar">
+<div class="brand-pill" id="btn-home">
+<div class="brand-icon">✦</div>
+<div class="brand-title">NASA · NSSDCA 3D</div>
+</div>
+<div class="top-actions">
+<button class="pill-btn" id="btn-catalog">Official NSSDCA Catalog</button>
+<button class="pill-btn" id="btn-wireframe">Wireframe Mode</button>
+<label class="pill-btn" title="Load any .glb file exported from Blender">
++ Test .GLB (Blender)
+<input type="file" id="glb-loader-input" accept=".glb,.gltf" style="display:none;" />
+</label>
+</div>
+</header>
+​<!-- Left Editorial Panel -->
+<section class="editorial-hud">
+<div class="editorial-content">
+<button class="back-space-btn" id="btn-back-space">← Back to Solar System</button>
+<div class="eyebrow" id="hud-eyebrow">SOLAR SYSTEM · NSSDCA CATALOG</div>
+<h2 class="hero-heading" id="hud-title">Forgotten Giants</h2>
+<p class="hero-desc" id="hud-desc">
+Stories of space hardware left behind on the Moon, Mars, and deep space. Select a destination or spacecraft to follow its real-time orbit.
+</p>
+<button class="read-more-link" id="btn-read-more">Read more ›</button>
+<div class="extra-details" id="hud-extra"></div>
+​<div class="telemetry-specs">
+<div class="spec-item">
+<span>Location / Destination</span>
+<strong id="spec-loc">Inner & Outer Solar System</strong>
+</div>
+<div class="spec-item">
+<span>Historical Period</span>
+<strong id="spec-year">1960 – 2026</strong>
+</div>
+<div class="spec-item">
+<span>Operational Status</span>
+<strong id="spec-status">Historical Monuments & Probes</strong>
+</div>
+<div class="spec-item">
+<span>Scene / Archive</span>
+<strong id="spec-archive">NASA NSSDCA Master Catalog</strong>
+</div>
+</div>
+​<button class="explore-cta" id="btn-explore-surface">Explore 3D Surface</button>
+​<!-- Quick chips when viewing the surface of the Moon, Mars, or Sun -->
+<div class="surface-missions-bar" id="surface-chips"></div>
+</div>
+</section>
+​<!-- Bottom Controls -->
+<footer class="bottom-hud">
+<div class="sim-controls">
+<button class="play-btn" id="btn-play" title="Pause / Resume Orbits">❚❚</button>
+<span class="speed-tag" id="btn-speed" title="Change orbital speed">1x ORBIT</span>
+<input type="range" id="year-slider" min="1960" max="2026" value="2026" />
+<span class="year-readout" id="year-label">2026</span>
+</div>
+​<nav class="planet-dock" id="planet-dock">
+<button class="dock-node active" data-target="solar">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fde047, #ea580c);"></div>
+<span>Solar System</span>
+</button>
+<button class="dock-node" data-target="sol">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fffbeb, #f59e0b);"></div>
+<span>The Sun</span>
+</button>
+<button class="dock-node" data-target="luna">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #e2e8f0, #475569);"></div>
+<span>The Moon</span>
+</button>
+<button class="dock-node" data-target="marte">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #fb923c, #9a3412);"></div>
+<span>Mars</span>
+</button>
+<button class="dock-node" data-target="dawn">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #94a3b8, #334155);"></div>
+<span>Dawn</span>
+</button>
+<button class="dock-node" data-target="near">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #d6d3d1, #57534e);"></div>
+<span>NEAR Eros</span>
+</button>
+<button class="dock-node" data-target="pioneer">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #38bdf8, #1e3a8a);"></div>
+<span>Pioneer 10</span>
+</button>
+<button class="dock-node" data-target="voyager1">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #60a5fa, #1e40af);"></div>
+<span>Voyager 1</span>
+</button>
+<button class="dock-node" data-target="voyager2">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #93c5fd, #1d4ed8);"></div>
+<span>Voyager 2</span>
+</button>
+<button class="dock-node" data-target="cassini">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #cbd5e1, #334155);"></div>
+<span>Cassini</span>
+</button>
+<button class="dock-node" data-target="kepler">
+<div class="orb-icon" style="background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);"></div>
+<span>Kepler/K2</span>
+</button>
+</nav>
+</footer>
+​<!-- NSSDCA Catalog Modal -->
+<div id="catalog-modal">
+<div class="modal-box">
+<div class="modal-head">
+<h2>NSSDCA Catalog · Official NASA Missions</h2>
+<button class="modal-close" id="btn-close-catalog">×</button>
+</div>
+<div class="catalog-grid" id="catalog-grid"></div>
+</div>
+</div>
+​<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+​// =========================================================================
+// BLENDER .GLB FILE CONFIGURATION
+// =========================================================================
+const BLENDER_GLB_SCENES = {
+luna: './escena_la_luna.glb',
+marte: './escena_marte.glb',
+sol: './escena_sol.glb'
+};
+​const HIDDEN_ON_SURFACE = new Set([
+'asteroide_433_eros',
+'dawn',
+'pioneer_10',
+'pioneer_11',
+'voyager_1',
+'voyager_2',
+'cassini',
+'kepler',
+'near_shoemaker'
+]);
+​// =========================================================================
+// 1. NSSDCA DATABASE TRANSLATED & UPDATED WITH OFFICIAL DATA
+// =========================================================================
+const NSSDCA_DATA = {
+solar: {
+eyebrow: 'SOLAR SYSTEM · NSSDCA CATALOG',
+title: 'Forgotten Giants',
+desc: 'Stories of space hardware left behind on the Moon, Mars, and deep space. Click on any celestial body or use the bottom bar to travel to it.',
+extra: 'NASA’s Space Science Data Coordinated Archive (NSSDCA) catalogs every spacecraft, lander, rover, and scientific instrument sent beyond Earth, recording its exact final location and operational status.',
+loc: 'Solar System & Interstellar Space',
+year: '1960 – 2026',
+status: 'Official Cataloged Missions',
+archive: 'NSSDCA Master Catalog',
+ctaText: null
+},
+sol: {
+eyebrow: 'CENTRAL STAR · THE SUN',
+title: 'The Sun & Solar Probes',
+desc: 'Gravitational center of the Solar System and destination of historic heliospheric study missions such as Helios 1, Helios 2, and Parker Solar Probe.',
+extra: 'The Helios 1 and 2 probes (launched in 1974 and 1976) remain in elliptical heliocentric orbits around the Sun after completing their solar wind measurements.',
+loc: 'Center of the Solar System · 0.0 AU',
+year: '1974 – 2026',
+status: 'Active / Historic Heliocentric Orbits',
+archive: 'escena_sol.glb',
+ctaText: 'Explore 3D Sun Scene',
+surfaceMode: 'sol'
+},
+luna: {
+eyebrow: 'NATURAL SATELLITE · THE MOON',
+title: 'The Moon',
+desc: 'Site of the first soft robotic landings and crewed Apollo missions, where descent stages, electric rovers, and scientific stations remain intact.',
+extra: 'Click on any spacecraft, rover, or scientific package on the lunar surface (or on the buttons below) to zoom in and read its official technical sheet.',
+loc: 'Earth Orbit · 384,400 km',
+year: '1966 – 1972',
+status: 'Permanent Lunar Monuments',
+archive: 'escena_la_luna.glb',
+ctaText: 'Explore 3D Lunar Surface',
+surfaceMode: 'luna'
+},
+marte: {
+eyebrow: 'FOURTH PLANET · MARS',
+title: 'Mars',
+desc: 'Home to a historic fleet of stationary landers, exploration rovers, and the first aircraft to fly on another world: the Ingenuity helicopter.',
+extra: 'From the Viking landers and Mars Pathfinder to Opportunity, Curiosity, and Perseverance, Mars preserves milestones from five decades of exploration.',
+loc: '1.52 AU Orbit · Solar System',
+year: '1976 – 2026',
+status: 'Surface Artifacts',
+archive: 'escena_marte.glb',
+ctaText: 'Explore 3D Martian Surface',
+surfaceMode: 'marte'
+},
+dawn: {
+eyebrow: 'ASTEROID BELT · ORBITER',
+title: 'Dawn Spacecraft',
+desc: 'The Dawn spacecraft mapped the two most massive bodies in the asteroid belt: the protoplanet Vesta and the dwarf planet Ceres.',
+extra: 'Powered by xenon ion thrusters, Dawn was the first mission to orbit two distinct extraterrestrial destinations. After exhausting its hydrazine in 2018, it remains in a perpetual orbit around Ceres.',
+loc: 'Perpetual Orbit around Ceres',
+year: '2007 – 2018',
+status: 'Out of fuel · Stable orbit',
+archive: 'NSSDCA ID: 2007-043A',
+ctaText: null
+},
+near: {
+eyebrow: 'NEAR-EARTH ASTEROID · 433 EROS',
+title: 'NEAR Shoemaker',
+desc: 'First spacecraft to orbit and softly land on an asteroid. It came to rest on the surface of 433 Eros.',
+extra: 'Originally designed solely as an orbiter, NEAR Shoemaker executed an unprecedented controlled descent on February 12, 2001, onto asteroid 433 Eros.',
+loc: 'Surface of Asteroid 433 Eros',
+year: '1996 – 2001',
+status: 'Resting on 433 Eros',
+archive: 'NSSDCA ID: 1996-008A',
+ctaText: null
+},
+pioneer: {
+eyebrow: 'OUTER SPACE · PIONEER 10',
+title: 'Pioneer 10',
+desc: 'Pioneer 10’s primary objective was to explore the gas giant planet Jupiter, its moons, its magnetic field, and its trapped radiation belts.',
+extra: 'On June 13, 1983, it passed the orbit of Neptune, becoming the first human-made object to leave the outer planets behind. NASA maintained intermittent contact until its last signal reached Earth on January 23, 2003.',
+loc: 'Whereabouts: Unknown · Interstellar Space',
+year: 'Launch: March 2, 1972',
+status: 'Last signal in 2003',
+archive: 'https://www.nasa.gov/history/50-years-ago-pioneer-10-launches-to-explore-jupiter/',
+ctaText: null
+},
+voyager1: {
+eyebrow: 'INTERSTELLAR SPACE · VOYAGER 1',
+title: 'Voyager 1',
+desc: 'Its objective was to survive Jupiter and Saturn; in August 2012, it crossed into interstellar space and continues collecting data.',
+extra: 'On October 24, 2024, NASA reconnected with the spacecraft after a communications pause by turning off a secondary radio transmitter last used 47 years ago. Over 49 years after launch, Voyager 1 is the first human-made object in interstellar space, at a distance of one light-day from Earth.',
+loc: '25.9 billion km from Earth',
+year: 'Launch: September 5, 1977',
+status: 'Active in Interstellar Space',
+archive: 'https://science.nasa.gov/blogs/voyager/2024/10/28/after-pause-nasas-voyager-1-communicating-with-mission-team/',
+ctaText: null
+},
+voyager2: {
+eyebrow: 'INTERSTELLAR SPACE · VOYAGER 2',
+title: 'Voyager 2',
+desc: 'Originally conceived for a "Grand Tour" of the five outer planets using four spacecraft, the mission was scaled back to Voyager 1 and 2. On December 10, 2018, it joined its twin in interstellar space.',
+extra: 'On July 8, 2019, Voyager 2 successfully fired its trajectory correction thrusters—degraded by time—which had not been used since its Neptune encounter in 1989.',
+loc: '21.6 billion km from Earth',
+year: 'Launch: August 20, 1977',
+status: 'Active in Interstellar Space',
+archive: 'https://science.nasa.gov/mission/voyager/voyager-2/',
+ctaText: null
+},
+cassini: {
+eyebrow: 'SATURN SYSTEM · CASSINI-HUYGENS',
+title: 'Cassini-Huygens',
+desc: 'For over a decade, Cassini shared the wonders of Saturn, its rings, and its icy moons, gathering data far beyond its original mission plan.',
+extra: 'On September 15, 2017, the spacecraft made its final approach, plunging into Saturn’s atmosphere to transmit data before burning up and disintegrating like a meteor above the gas giant’s clouds.',
+loc: 'Whereabouts: Disintegrated in Saturn’s atmosphere',
+year: 'Launch: October 15, 1997',
+status: 'Mission Completed (2017)',
+archive: 'https://science.nasa.gov/mission/cassini/',
+ctaText: null
+},
+kepler: {
+eyebrow: 'EXOPLANET SEARCH · KEPLER/K2',
+title: 'Kepler / K2 Space Telescope',
+desc: 'Originally tasked with observing 150,000 stars in Cygnus, it conducted the first survey of planets in our galaxy and became NASA’s first mission to detect Earth-size planets in habitable zones.',
+extra: 'After suffering structural damage, it was given a second life by using sunlight pressure to maintain its orientation like a kayak steering into a current. The redesigned "K2" mission scanned a larger swath of sky along the ecliptic plane.',
+loc: 'Heliocentric Orbit (Trailing Earth)',
+year: 'Launch: March 6, 2009',
+status: 'Deactivated · Drifting orbit',
+archive: 'https://science.nasa.gov/mission/kepler/',
+ctaText: null
+}
+};
+​// =========================================================================
+// 3D SURFACE MISSION SHEETS (OFFICIAL TEXTS TRANSLATED TO ENGLISH)
+// =========================================================================
+const SURFACE_MISSIONS = {
+sol: [
+{
+id: 'helios',
+keywords: ['helios', 'sondas_helios', 'parker'],
+name: 'Helios 1 & 2 Probes',
+short: 'Helios 1 & 2',
+year: 1974,
+loc: 'Inner Heliocentric Orbit',
+status: 'Permanent solar orbit',
+pos: [0.0, 0.0, 0.0],
+glbScaleFactor: 1.0,
+desc: 'Probes developed to study solar processes at record-close distances to the Sun. After completing their operational lives, they continue orbiting our star.',
+extra: 'They reached record peak speeds at perihelion.'
+}
+],
+luna: [
+{
+id: 'apolo',
+keywords: ['apolo', 'apollo', 'eagle', 'modulo_lunar', 'lunar_module', 'lm_'],
+name: 'Apollo Lunar Modules',
+short: 'Apollo Lunar Modules',
+year: 1969,
+loc: 'Sea of Tranquility · The Moon (NSSDCA ID: 1969-059C)',
+status: 'Parked descent stages',
+pos: [-2.1, 0.0, -1.3],
+glbScaleFactor: 0.92,
+desc: 'This was the first crewed vehicle to land on the Moon, carrying the first two men to walk on the lunar surface. It also carried the Early Apollo Scientific Experiments Package (EASEP), consisting of autonomous experiments designed to be left on the surface.',
+extra: 'However, on August 27, 1969, EASEP stopped accepting commands from ground stations, forcing the termination of the experiment.'
+},
+{
+id: 'lrv',
+keywords: ['lrv', 'vehiculo_lunar', 'rover_lunar', 'lunar_rover', 'roving'],
+subLabels: [
+{ short: 'Lunar Rover (Apollo 15)', name: 'Lunar Roving Vehicles · Apollo 15', loc: 'Hadley Rille · The Moon' },
+{ short: 'Lunar Rover (Apollo 16)', name: 'Lunar Roving Vehicles · Apollo 16', loc: 'Descartes Highlands · The Moon' },
+{ short: 'Lunar Rover (Apollo 17)', name: 'Lunar Roving Vehicles · Apollo 17', loc: 'Taurus-Littrow · The Moon' }
+],
+name: 'Lunar Roving Vehicles',
+short: 'Lunar Roving Vehicles',
+year: 1971,
+loc: 'Apollo 15, 16 & 17 · The Moon (NSSDCA ID: 1971-063C)',
+status: 'Permanently parked',
+pos: [1.8, 0.0, 1.1],
+glbScaleFactor: 0.90,
+desc: 'This was the fourth crewed vehicle to land on the Moon. The lunar modules carried exploration vehicles and an Apollo Lunar Surface Experiments Package (ALSEP) on the Apollo 15, 16, and 17 missions.',
+extra: 'At the end of each mission campaign, astronauts parked the rover about 100 meters from the Lunar Module, aiming its TV camera—remotely controlled from Houston—at the spacecraft to record liftoff from the Moon.'
+},
+{
+id: 'alsep',
+keywords: ['alsep', 'paquetes_cientificos', 'paquete_cientifico', 'sismometro'],
+name: 'ALSEP / EASEP Scientific Packages',
+short: 'ALSEP Packages',
+year: 1969,
+loc: 'Apollo Landing Sites · The Moon',
+status: 'Historic scientific stations',
+pos: [-0.6, 0.0, 2.2],
+glbScaleFactor: 1.0,
+desc: 'Autonomous Apollo lunar surface experiment packages designed for seismic analysis and long-term scientific measurements.',
+extra: 'The laser retroreflector arrays installed by these missions are still used today by Earth observatories.'
+},
+{
+id: 'sondas_luna',
+keywords: ['surveyor', 'sondas_roboticas', 'sonda_robotica', 'reconocimiento', 'ranger'],
+name: 'Surveyor Landers',
+short: 'Surveyor Landers',
+year: 1967,
+loc: 'Oceanus Procellarum · The Moon',
+status: 'Historic soft landing',
+pos: [2.4, 0.0, -2.0],
+glbScaleFactor: 0.90,
+desc: 'The second in the Surveyor series to make a soft landing on the Moon. Based on surface sampling tests, scientists concluded the lunar soil was solid enough to support the weight of an Apollo Lunar Module.',
+extra: 'Last contact occurred on May 4, 1967. Over three years later, on November 18, 1969, Apollo 12 astronauts landed ~180 meters away and retrieved parts—including the soil scoop and camera system—to study 2.5 years of lunar exposure.'
+}
+],
+marte: [
+{
+id: 'opportunity',
+keywords: ['opportunity'],
+name: 'Opportunity',
+short: 'Opportunity',
+year: 2003,
+loc: 'Meridiani Planum / Perseverance Valley · Mars',
+status: 'Mission ended · Perseverance Valley',
+pos: [-1.8, 0.0, 7.6],
+glbScaleFactor: 0.72,
+desc: 'Launched July 7, 2003, and landing January 25, 2004, its mission was to search for diverse rocks, soil types, and clues about past water activity on Mars. In February 2017, it surpassed 44 km traveled toward Perseverance Valley.',
+extra: 'During a historic planet-wide dust storm in 2018, power levels dropped and its final signal was heard on June 10, 2018. Outlasting its life expectancy by 60 times, it traveled over 45 km to its final resting place in Perseverance Valley.'
+},
+{
+id: 'sojourner',
+keywords: ['sojourner', 'pathfinder'],
+name: 'Mars Pathfinder',
+short: 'Mars Pathfinder',
+year: 1996,
+loc: 'Ares Vallis · Mars',
+status: 'Technology demonstration completed',
+pos: [-4.8, 0.0, 2.4],
+glbScaleFactor: 0.60,
+desc: 'Launched December 4, 1996, and designed as a technology demonstration to deliver an instrumented lander and a free-ranging robotic rover to the Martian surface.',
+extra: 'Key discoveries included rounded pebbles and conglomerates carried by ancient rivers, supporting theories of a warmer, wetter Mars. The rover traveled ~100 meters in 230 maneuvers and ran 16 chemical analyses before losing contact on September 27 after 83 days.'
+},
+{
+id: 'spirit',
+keywords: ['spirit'],
+name: 'Spirit Rover (MER-A)',
+short: 'Spirit',
+year: 2004,
+loc: 'Gusev Crater · Mars',
+status: 'Inactive monument on Mars',
+pos: [-8.5, 0.0, 7.6],
+glbScaleFactor: 0.72,
+desc: 'Twin exploration rover that traveled 7.73 km across Gusev Crater, uncovering evidence of ancient hydrothermal systems on Mars.',
+extra: 'Outlasted its original 90-sol mission design by more than 20 times.'
+},
+{
+id: 'viking_1',
+keywords: ['viking_1'],
+name: 'Viking 1 Lander',
+short: 'Viking 1',
+year: 1976,
+loc: 'Chryse Planitia · Mars',
+status: 'Remains at landing site',
+pos: [-0.5, 0.0, -5.2],
+glbScaleFactor: 0.52,
+desc: 'First U.S. lander to operate successfully on the Martian surface (July 20, 1976), transmitting the first color panoramic views.',
+extra: 'Conducted pioneering biological and meteorological experiments.'
+},
+{
+id: 'viking_2',
+keywords: ['viking_2'],
+name: 'Viking 2 Lander',
+short: 'Viking 2',
+year: 1976,
+loc: 'Utopia Planitia · Mars',
+status: 'Remains at landing site',
+pos: [-11.0, 0.0, 1.8],
+glbScaleFactor: 0.62,
+desc: 'Twin lander that touched down in Utopia Planitia, recording seasonal water frost on the Martian soil.',
+extra: 'Transmitted meteorological and seismic data for 1,281 sols.'
+},
+{
+id: 'phoenix',
+keywords: ['phoenix'],
+name: 'Phoenix Lander',
+short: 'Phoenix',
+year: 2008,
+loc: 'Vastitas Borealis · Mars',
+status: 'Mission completed',
+pos: [-10.2, 0.0, -5.5],
+glbScaleFactor: 0.42,
+desc: 'Landed in the Martian arctic region and used its robotic arm to directly confirm the presence of subsurface water ice.',
+extra: 'Lost power when the Martian polar winter arrived.'
+},
+{
+id: 'insight',
+keywords: ['insight'],
+name: 'InSight Lander',
+short: 'InSight',
+year: 2018,
+loc: 'Elysium Planitia · Mars',
+status: 'Mission completed',
+pos: [10.5, 0.0, -5.8],
+glbScaleFactor: 0.50,
+desc: 'Geophysical station that detected over 1,300 marsquakes to study the deep interior structure of Mars.',
+extra: 'Concluded operations after dust covered its solar arrays.'
+},
+{
+id: 'curiosity',
+keywords: ['curiosity'],
+name: 'Curiosity Rover (MSL)',
+short: 'Curiosity',
+year: 2012,
+loc: 'Gale Crater · Mars',
+status: 'Active on Mars',
+pos: [5.0, 0.0, 7.4],
+glbScaleFactor: 0.68,
+desc: 'Nuclear-powered mobile laboratory investigating past habitability on Mount Sharp.',
+extra: 'Confirmed the ancient presence of freshwater lakes and streams.'
+},
+{
+id: 'perseverance',
+keywords: ['perseverance'],
+name: 'Perseverance Rover',
+short: 'Perseverance',
+year: 2021,
+loc: 'Jezero Crater · Mars',
+status: 'Active on Mars',
+pos: [11.4, 0.0, 7.0],
+glbScaleFactor: 0.68,
+desc: 'Explores the ancient river delta in Jezero Crater searching for biosignatures and caching rock cores.',
+extra: 'Carried Ingenuity and demonstrated oxygen production with MOXIE.'
+},
+{
+id: 'ingenuity',
+keywords: ['ingenuity', 'helicoptero'],
+name: 'Ingenuity Helicopter',
+short: 'Ingenuity',
+year: 2021,
+loc: 'Jezero Crater · Mars',
+status: 'Historic aviation monument',
+pos: [11.0, 0.0, 2.0],
+glbScaleFactor: 0.52,
+desc: 'First aircraft to achieve powered, controlled flight on another planet. Completed 72 flights before rotor damage.',
+extra: 'Remains on the surface as a permanent technological landmark.'
+}
+]
+};
+​// =========================================================================
+// 2. INTRO SPLASH
+// =========================================================================
+const splash = document.getElementById('splash-screen');
+setTimeout(() => splash.classList.add('hidden'), 1800);
+splash.addEventListener('click', () => splash.classList.add('hidden'));
+​// =========================================================================
+// 3. THREE.JS ENGINE + PROCEDURAL HD TEXTURE GENERATOR
+// =========================================================================
+const container = document.getElementById('canvas-container');
+const labelsLayer = document.getElementById('labels-layer');
+const scene = new THREE.Scene();
+​const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 400);
+camera.position.set(0, 11.5, 18.5);
+​const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+container.appendChild(renderer.domElement);
+​const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 0.8;
+controls.maxDistance = 85;
+​function makePlanetTexture(type) {
+const c = document.createElement('canvas');
+c.width = 512;
+c.height = 256;
+const ctx = c.getContext('2d');
+​if (type === 'sun') {
+const grad = ctx.createRadialGradient(256, 128, 10, 256, 128, 260);
+grad.addColorStop(0, '#fff7ed');
+grad.addColorStop(0.4, '#fbbf24');
+grad.addColorStop(0.85, '#ea580c');
+grad.addColorStop(1, '#9a3412');
+ctx.fillStyle = grad;
+ctx.fillRect(0, 0, 512, 256);
+for (let i = 0; i < 650; i++) {
+ctx.fillStyle = i % 2 === 0 ? 'rgba(255,251,235,0.16)' : 'rgba(154,52,18,0.22)';
+ctx.beginPath();
+ctx.arc(Math.random() * 512, Math.random() * 256, Math.random() * 14 + 2, 0, Math.PI * 2);
+ctx.fill();
+}
+} else if (type === 'earth') {
+ctx.fillStyle = '#0b3b8c';
+ctx.fillRect(0, 0, 512, 256);
+ctx.fillStyle = '#2e7d32';
+for (let i = 0; i < 48; i++) {
+ctx.beginPath();
+ctx.ellipse(Math.random() * 512, 35 + Math.random() * 186, Math.random() * 45 + 12, Math.random() * 25 + 8, Math.random() * 3, 0, Math.PI * 2);
+ctx.fill();
+}
+ctx.fillStyle = 'rgba(255,255,255,0.34)';
+for (let i = 0; i < 90; i++) {
+ctx.beginPath();
+ctx.ellipse(Math.random() * 512, Math.random() * 256, Math.random() * 55 + 10, Math.random() * 7 + 2, 0.1, 0, Math.PI * 2);
+ctx.fill();
+}
+} else if (type === 'moon') {
+ctx.fillStyle = '#8b919b';
+ctx.fillRect(0, 0, 512, 256);
+for (let i = 0; i < 240; i++) {
+const x = Math.random() * 512;
+const y = Math.random() * 256;
+const r = Math.random() * 16 + 2;
+ctx.fillStyle = i % 3 === 0 ? 'rgba(45,50,58,0.45)' : 'rgba(203,213,225,0.3)';
+ctx.beginPath();
+ctx.arc(x, y, r, 0, Math.PI * 2);
+ctx.fill();
+}
+} else if (type === 'mars') {
+ctx.fillStyle = '#b84a1e';
+ctx.fillRect(0, 0, 512, 256);
+for (let i = 0; i < 120; i++) {
+ctx.fillStyle = i % 2 === 0 ? 'rgba(69,20,8,0.35)' : 'rgba(234,118,62,0.3)';
+ctx.beginPath();
+ctx.ellipse(Math.random() * 512, 24 + Math.random() * 208, Math.random() * 48 + 8, Math.random() * 18 + 4, Math.random(), 0, Math.PI * 2);
+ctx.fill();
+}
+ctx.fillStyle = 'rgba(248,250,252,0.85)';
+ctx.fillRect(0, 0, 512, 12);
+ctx.fillRect(0, 244, 512, 12);
+}
+​const tex = new THREE.CanvasTexture(c);
+tex.wrapS = THREE.RepeatWrapping;
+tex.wrapT = THREE.ClampToEdgeWrapping;
+return tex;
+}
+​const texSun = makePlanetTexture('sun');
+const texEarth = makePlanetTexture('earth');
+const texMoon = makePlanetTexture('moon');
+const texMars = makePlanetTexture('mars');
+​const starGeo = new THREE.BufferGeometry();
+const starCount = 2600;
+const starPositions = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount * 3; i++) {
+starPositions[i] = (Math.random() - 0.5) * 260;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+const starField = new THREE.Points(
+starGeo,
+new THREE.PointsMaterial({ color: 0xffffff, size: 0.24, transparent: true, opacity: 0.85 })
+);
+scene.add(starField);
+​const ambientLight = new THREE.AmbientLight(0x334155, 0.75);
+scene.add(ambientLight);
+const sunPointLight = new THREE.PointLight(0xfff5db, 3.6, 160, 0.4);
+scene.add(sunPointLight);
+​const solarSystemGroup = new THREE.Group();
+const surfaceWorldGroup = new THREE.Group();
+scene.add(solarSystemGroup);
+scene.add(surfaceWorldGroup);
+​// =========================================================================
+// 4. BUILT-IN FALLBACK 3D MODELS
+// =========================================================================
+function buildSpacecraftModel(id) {
+const g = new THREE.Group();
+const matGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.88, roughness: 0.22 });
+const matWhite = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.25, roughness: 0.35 });
+const matDark = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.4 });
+const matSolar = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness: 0.6, roughness: 0.25 });
+const matCopper = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+​if (id === 'apolo') {
+const descent = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.28, 8), matGold);
+descent.position.y = 0.26;
+g.add(descent);
+for (let i = 0; i < 4; i++) {
+const ang = (i * Math.PI) / 2 + Math.PI / 4;
+const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.34), matGold);
+leg.position.set(Math.cos(ang) * 0.44, 0.16, Math.sin(ang) * 0.44);
+leg.rotation.z = -Math.cos(ang) * 0.45;
+leg.rotation.x = Math.sin(ang) * 0.45;
+const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.02, 12), matGold);
+pad.position.set(Math.cos(ang) * 0.54, 0.01, Math.sin(ang) * 0.54);
+g.add(leg, pad);
+}
+const ascent = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.28, 0.34), matWhite);
+ascent.position.y = 0.53;
+const dish = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.07, 16, 1, true), matWhite);
+dish.position.set(0.16, 0.72, 0.1);
+dish.rotation.x = 0.6;
+g.add(ascent, dish);
+} else if (id === 'lrv') {
+const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.34), matGold);
+chassis.position.y = 0.14;
+g.add(chassis);
+[[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]].forEach(([x, z]) => {
+const w = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 16), matDark);
+w.rotation.x = Math.PI / 2;
+w.position.set(x, 0.09, z);
+g.add(w);
+});
+const seat1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.12), matWhite);
+seat1.position.set(-0.04, 0.22, -0.08);
+const seat2 = seat1.clone();
+seat2.position.z = 0.08;
+const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28), matWhite);
+mast.position.set(0.22, 0.28, 0.1);
+const umbrella = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.08, 16, 1, true), matWhite);
+umbrella.position.set(0.22, 0.42, 0.1);
+umbrella.rotation.z = -0.35;
+g.add(seat1, seat2, mast, umbrella);
+} else if (id === 'alsep') {
+const central = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.22), matWhite);
+central.position.y = 0.08;
+const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.32), matWhite);
+ant.position.y = 0.28;
+const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 12), matDark);
+rtg.position.set(0.32, 0.11, -0.12);
+const retro = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.14), matSolar);
+retro.position.set(-0.28, 0.06, 0.16);
+retro.rotation.x = -0.4;
+g.add(central, ant, rtg, retro);
+} else if (id === 'sondas_luna') {
+const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.24, 6), matWhite);
+frame.position.y = 0.22;
+const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42), matWhite);
+mast.position.y = 0.45;
+const panel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.18), matSolar);
+panel.position.y = 0.66;
+panel.rotation.z = 0.25;
+g.add(frame, mast, panel);
+for (let i = 0; i < 3; i++) {
+const a = (i * Math.PI * 2) / 3;
+const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.3), matWhite);
+leg.position.set(Math.cos(a) * 0.24, 0.12, Math.sin(a) * 0.24);
+leg.rotation.z = -Math.cos(a) * 0.5;
+leg.rotation.x = Math.sin(a) * 0.5;
+g.add(leg);
+}
+} else if (id === 'sojourner') {
+const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.2), matSolar);
+body.position.y = 0.13;
+g.add(body);
+[-0.11, 0, 0.11].forEach(x => {
+[-0.12, 0.12].forEach(z => {
+const w = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 12), matDark);
+w.rotation.x = Math.PI / 2;
+w.position.set(x, 0.045, z);
+g.add(w);
+});
+});
+} else if (id === 'spirit' || id === 'opportunity' || id === 'curiosity' || id === 'perseverance') {
+const scale = (id === 'curiosity' || id === 'perseverance') ? 1.25 : 0.95;
+const deck = new THREE.Mesh(new THREE.BoxGeometry(0.42 * scale, 0.12 * scale, 0.36 * scale), (id === 'curiosity' || id === 'perseverance') ? matWhite : matGold);
+deck.position.y = 0.2 * scale;
+const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.38 * scale, 0.02, 0.46 * scale), matSolar);
+wingL.position.set(0, 0.27 * scale, 0);
+const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.34 * scale), matWhite);
+mast.position.set(0.14 * scale, 0.42 * scale, 0.08 * scale);
+const head = new THREE.Mesh(new THREE.BoxGeometry(0.1 * scale, 0.06 * scale, 0.14 * scale), matWhite);
+head.position.set(0.14 * scale, 0.58 * scale, 0.08 * scale);
+g.add(deck, wingL, mast, head);
+[-0.17 * scale, 0, 0.17 * scale].forEach(x => {
+[-0.21 * scale, 0.21 * scale].forEach(z => {
+const w = new THREE.Mesh(new THREE.CylinderGeometry(0.065 * scale, 0.065 * scale, 0.045 * scale, 14), matDark);
+w.rotation.x = Math.PI / 2;
+w.position.set(x, 0.065 * scale, z);
+g.add(w);
+});
+});
+} else if (id === 'viking_1' || id === 'viking_2') {
+const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.18, 6), matWhite);
+body.position.y = 0.22;
+const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.02, 0.06, 18), matWhite);
+dish.position.set(-0.1, 0.44, 0);
+dish.rotation.z = 0.35;
+const arm = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.025, 0.03), matGold);
+arm.position.set(0.32, 0.22, 0.1);
+g.add(body, dish, arm);
+for (let i = 0; i < 3; i++) {
+const a = (i * Math.PI * 2) / 3;
+const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.24), matWhite);
+leg.position.set(Math.cos(a) * 0.34, 0.11, Math.sin(a) * 0.34);
+g.add(leg);
+}
+} else if (id === 'phoenix' || id === 'insight') {
+const deck = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 8), matGold);
+deck.position.y = 0.2;
+const fan1 = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.015, 16), matSolar);
+fan1.position.set(-0.46, 0.25, 0);
+const fan2 = fan1.clone();
+fan2.position.x = 0.46;
+const seis = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), matCopper);
+seis.position.set(0.05, 0.01, 0.48);
+g.add(deck, fan1, fan2, seis);
+} else if (id === 'ingenuity') {
+const fus = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.14), matGold);
+fus.position.y = 0.24;
+const solarTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.015, 0.16), matSolar);
+solarTop.position.y = 0.44;
+const rotor1 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.01, 0.045), matDark);
+rotor1.position.y = 0.35;
+rotor1.rotation.y = 0.4;
+const rotor2 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.01, 0.045), matDark);
+rotor2.position.y = 0.39;
+rotor2.rotation.y = -0.5;
+rotor2.rotation.z = 0.12;
+g.add(fus, solarTop, rotor1, rotor2);
+for (let i = 0; i < 4; i++) {
+const a = (i * Math.PI) / 2 + Math.PI / 4;
+const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.26), matDark);
+leg.position.set(Math.cos(a) * 0.12, 0.12, Math.sin(a) * 0.12);
+leg.rotation.z = -Math.cos(a) * 0.45;
+leg.rotation.x = Math.sin(a) * 0.45;
+g.add(leg);
+}
+} else {
+const bus = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.14, 8), matGold);
+const dish = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.1, 20, 1, true), matWhite);
+dish.rotation.x = Math.PI / 2;
+dish.position.z = 0.12;
+const wing1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.01, 0.16), matSolar);
+wing1.position.x = -0.36;
+const wing2 = wing1.clone();
+wing2.position.x = 0.36;
+g.add(bus, dish, wing1, wing2);
+}
+​return g;
+}
+​// =========================================================================
+// 5. ANIMATED SOLAR SYSTEM
+// =========================================================================
+let dynamicLabels = [];
+let interactiveMeshes = [];
+​function clearLabels() {
+labelsLayer.innerHTML = '';
+dynamicLabels = [];
+interactiveMeshes = [];
+}
+​function createLabel(text, obj3D, onClick, isMission = false, year = 1960) {
+const el = document.createElement('div');
+el.className = 'space-tag' + (isMission ? ' mission-pin' : '');
+el.textContent = text;
+el.addEventListener('click', (e) => {
+e.stopPropagation();
+onClick();
+});
+labelsLayer.appendChild(el);
+dynamicLabels.push({ el, obj3D, year });
+return el;
+}
+​const sunMesh = new THREE.Mesh(
+new THREE.SphereGeometry(1.5, 48, 32),
+new THREE.MeshBasicMaterial({ map: texSun })
+);
+const sunGlow = new THREE.Mesh(
+new THREE.SphereGeometry(1.95, 32, 24),
+new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending })
+);
+solarSystemGroup.add(sunMesh, sunGlow);
+​function addOrbitRing(radius, color = 0x334155, opacity = 0.55) {
+const pts = [];
+for (let i = 0; i <= 128; i++) {
+const a = (i / 128) * Math.PI * 2;
+pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+}
+const line = new THREE.Line(
+new THREE.BufferGeometry().setFromPoints(pts),
+new THREE.LineBasicMaterial({ color, transparent: true, opacity })
+);
+solarSystemGroup.add(line);
+return line;
+}
+​addOrbitRing(4.8, 0x38bdf8, 0.45);
+addOrbitRing(7.6, 0xf97316, 0.45);
+addOrbitRing(10.6, 0x64748b, 0.35);
+​const earthOrbitPivot = new THREE.Group();
+const earthMesh = new THREE.Mesh(
+new THREE.SphereGeometry(0.52, 36, 24),
+new THREE.MeshStandardMaterial({ map: texEarth, roughness: 0.55 })
+);
+earthMesh.position.set(4.8, 0, 0);
+earthOrbitPivot.add(earthMesh);
+​const moonOrbitPivot = new THREE.Group();
+moonOrbitPivot.position.set(4.8, 0, 0);
+const moonMesh = new THREE.Mesh(
+new THREE.SphereGeometry(0.19, 28, 20),
+new THREE.MeshStandardMaterial({ map: texMoon, roughness: 0.92 })
+);
+moonMesh.position.set(0.95, 0, 0);
+moonOrbitPivot.add(moonMesh);
+earthOrbitPivot.add(moonOrbitPivot);
+solarSystemGroup.add(earthOrbitPivot);
+​const keplerPivot = new THREE.Group();
+keplerPivot.rotation.y = -0.55;
+const keplerProbe = buildSpacecraftModel('probe_dish');
+keplerProbe.scale.setScalar(0.55);
+keplerProbe.position.set(5.1, 0.15, 0);
+keplerPivot.add(keplerProbe);
+solarSystemGroup.add(keplerPivot);
+​const marsOrbitPivot = new THREE.Group();
+marsOrbitPivot.rotation.y = 2.1;
+const marsMesh = new THREE.Mesh(
+new THREE.SphereGeometry(0.42, 36, 24),
+new THREE.MeshStandardMaterial({ map: texMars, roughness: 0.85 })
+);
+marsMesh.position.set(7.6, 0, 0);
+marsOrbitPivot.add(marsMesh);
+solarSystemGroup.add(marsOrbitPivot);
+​const dawnOrbitPivot = new THREE.Group();
+dawnOrbitPivot.rotation.y = 0.8;
+const ceresMesh = new THREE.Mesh(
+new THREE.SphereGeometry(0.24, 24, 18),
+new THREE.MeshStandardMaterial({ map: texMoon, color: 0x94a3b8, roughness: 0.95 })
+);
+ceresMesh.position.set(10.6, 0, 0);
+const dawnProbe = buildSpacecraftModel('probe_dish');
+dawnProbe.scale.setScalar(0.55);
+dawnProbe.position.set(10.6, 0.42, 0.25);
+dawnOrbitPivot.add(ceresMesh, dawnProbe);
+solarSystemGroup.add(dawnOrbitPivot);
+​const nearPivot = new THREE.Group();
+nearPivot.rotation.y = 4.1;
+const erosGeo = new THREE.SphereGeometry(0.22, 20, 14);
+erosGeo.scale(1.8, 0.75, 0.85);
+const erosMesh = new THREE.Mesh(
+erosGeo,
+new THREE.MeshStandardMaterial({ map: texMoon, color: 0xa8a29e, roughness: 0.95 })
+);
+erosMesh.position.set(6.2, 0.35, 0);
+const nearProbe = buildSpacecraftModel('probe_dish');
+nearProbe.scale.setScalar(0.45);
+nearProbe.position.set(6.2, 0.56, 0);
+nearPivot.add(erosMesh, nearProbe);
+solarSystemGroup.add(nearPivot);
+​const deepSpaceGroup = new THREE.Group();
+const p10 = buildSpacecraftModel('probe_dish');
+p10.scale.setScalar(0.65);
+p10.position.set(-11.5, 1.8, 7.5);
+const v1 = buildSpacecraftModel('probe_dish');
+v1.scale.setScalar(0.65);
+v1.position.set(12.2, -1.5, -8.2);
+const v2 = buildSpacecraftModel('probe_dish');
+v2.scale.setScalar(0.65);
+v2.position.set(-9.2, -2.1, -11.0);
+const cas = buildSpacecraftModel('probe_dish');
+cas.scale.setScalar(0.60);
+cas.position.set(8.5, 2.3, 6.2);
+deepSpaceGroup.add(p10, v1, v2, cas);
+​function addDashedTrajectory(points, color) {
+const line = new THREE.Line(
+new THREE.BufferGeometry().setFromPoints(points),
+new THREE.LineDashedMaterial({ color, dashSize: 0.45, gapSize: 0.3, transparent: true, opacity: 0.65 })
+);
+line.computeLineDistances();
+solarSystemGroup.add(line);
+}
+addDashedTrajectory([new THREE.Vector3(0,0,0), new THREE.Vector3(-5.5, 0.9, 3.6), new THREE.Vector3(-14, 2.2, 9.2)], 0x38bdf8);
+addDashedTrajectory([new THREE.Vector3(0,0,0), new THREE.Vector3(6.0, -0.7, -4.0), new THREE.Vector3(14.5, -1.8, -9.8)], 0x38bdf8);
+solarSystemGroup.add(deepSpaceGroup);
+​const TRACK_TARGETS = {
+solar: null,
+sol: sunMesh,
+luna: moonMesh,
+marte: marsMesh,
+dawn: ceresMesh,
+near: erosMesh,
+pioneer: p10,
+voyager1: v1,
+voyager2: v2,
+cassini: cas,
+kepler: keplerProbe
+};
+​function setupSolarLabels() {
+clearLabels();
+createLabel('Sun', sunMesh, () => selectSolarTarget('sol'));
+createLabel('The Moon (Apollo · LRV · ALSEP)', moonMesh, () => selectSolarTarget('luna'), true);
+createLabel('Mars (NASA Fleet · Rovers)', marsMesh, () => selectSolarTarget('marte'), true);
+createLabel('Dawn (Vesta & Ceres)', ceresMesh, () => selectSolarTarget('dawn'), true);
+createLabel('NEAR Shoemaker (433 Eros)', erosMesh, () => selectSolarTarget('near'), true);
+createLabel('Pioneer 10', p10, () => selectSolarTarget('pioneer'), true);
+createLabel('Voyager 1 (Interstellar Space)', v1, () => selectSolarTarget('voyager1'), true);
+createLabel('Voyager 2 (Interstellar Space)', v2, () => selectSolarTarget('voyager2'), true);
+createLabel('Cassini-Huygens (Saturn)', cas, () => selectSolarTarget('cassini'), true);
+createLabel('Kepler/K2 Space Telescope', keplerProbe, () => selectSolarTarget('kepler'), true);
+}
+​// =========================================================================
+// 6. 3D SURFACE SCENES
+// =========================================================================
+let currentSceneMode = 'solar';
+let currentTargetKey = 'solar';
+let wireframeEnabled = false;
+let isPlaying = true;
+let speedMultiplier = 1;
+let activeMixer = null;
+​function normalizeName(str) {
+return (str || '')
+.toLowerCase()
+.normalize('NFD')
+.replace(/[̀-ͯ]/g, '')
+.replace(/[^a-z0-9]+/g, '')
+.replace(/^|_$/g, '');
+}
+​function terrainHeightAt(x, z, isMars) {
+let y = Math.sin(x * 0.75) * Math.cos(z * 0.75) * (isMars ? 0.22 : 0.16);
+const craters = isMars
+? [[-2.0, -1.2, 1.6, 0.28], [1.8, 1.4, 1.4, 0.24], [0.2, -2.2, 1.2, 0.2]]
+: [[-1.5, -1.0, 1.7, 0.34], [1.9, -1.5, 1.4, 0.28], [0.4, 1.6, 1.5, 0.3]];
+for (const [cx, cz, rad, depth] of craters) {
+const d = Math.hypot(x - cx, z - cz);
+if (d < rad) {
+const nd = d / rad;
+y -= depth * (1 - nd * nd);
+} else if (d < rad * 1.25) {
+y += depth * 0.18 * Math.sin(((d - rad) / (rad * 0.25)) * Math.PI);
+}
+}
+return y;
+}
+​function registerMissionUI(missionShort, focusFn, chipsContainer, chipIndex, pinEl) {
+const chip = document.createElement('button');
+chip.className = 'surface-chip';
+chip.textContent = missionShort;
+const activate = () => {
+focusFn();
+document.querySelectorAll('.surface-chip').forEach((c, i) => c.classList.toggle('active', i === chipIndex));
+document.querySelectorAll('.space-tag').forEach((p) => p.classList.remove('active-pin'));
+if (pinEl) pinEl.classList.add('active-pin');
+};
+chip.onclick = activate;
+chipsContainer.appendChild(chip);
+return activate;
+}
+​function bindGLBScene(gltfScene, planetKey) {
+const isMars = planetKey === 'marte';
+const missions = SURFACE_MISSIONS[planetKey] || [];
+const chipsContainer = document.getElementById('surface-chips');
+chipsContainer.innerHTML = '';
+chipsContainer.classList.add('visible');
+​gltfScene.traverse((child) => {
+if (!child.name) return;
+const norm = normalizeName(child.name);
+if (norm.startsWith('etiqueta_') || HIDDEN_ON_SURFACE.has(norm)) {
+child.visible = false;
+}
+});
+​gltfScene.updateMatrixWorld(true);
+​let terrainObj = null;
+const allNamedNodes = [];
+gltfScene.traverse((child) => {
+if (!child.visible || !child.name) return;
+const norm = normalizeName(child.name);
+if (norm.startsWith('superficie_') || norm.includes('terreno') || norm.includes('suelo')) {
+terrainObj = child;
+} else {
+allNamedNodes.push({ obj: child, norm });
+}
+});
+​const boundObjects = new Set();
+let registeredCount = 0;
+​const attachInteractiveObject = (targetObj, meta) => {
+if (!targetObj || boundObjects.has(targetObj)) return;
+boundObjects.add(targetObj);
+​if (meta.glbScaleFactor && meta.glbScaleFactor !== 1.0) {
+const boxBefore = new THREE.Box3().setFromObject(targetObj);
+const groundY = boxBefore.min.y;
+targetObj.scale.multiplyScalar(meta.glbScaleFactor);
+targetObj.updateMatrixWorld(true);
+const boxAfter = new THREE.Box3().setFromObject(targetObj);
+targetObj.position.y += (groundY - boxAfter.min.y);
+targetObj.updateMatrixWorld(true);
+}
+​const box = new THREE.Box3().setFromObject(targetObj);
+if (box.isEmpty()) return;
+const center = new THREE.Vector3();
+const size = new THREE.Vector3();
+box.getCenter(center);
+box.getSize(size);
+​const anchor = new THREE.Object3D();
+anchor.position.set(center.x, box.max.y + 0.25, center.z);
+surfaceWorldGroup.add(anchor);
+​const chipIdx = registeredCount++;
+let activateHandler = null;
+​const focusMission = () => {
+const prefix = planetKey === 'sol'
+? SUN · MISSION ${meta.year}
+: (isMars ? MARS · MISSION ${meta.year} : THE MOON · MISSION ${meta.year});
+updateEditorialHUD({
+eyebrow: prefix,
+title: meta.name,
+desc: meta.desc,
+extra: meta.extra,
+loc: meta.loc,
+year: String(meta.year),
+status: meta.status,
+archive: BLENDER_GLB_SCENES[planetKey] || 'Blender .GLB',
+ctaText: null
+});
+​const camDist = Math.max(size.x, size.y, size.z, 1.35) * 2.05;
+desiredTargetPos.set(center.x, center.y, center.z);
+desiredCameraPos.set(center.x + camDist * 0.85, center.y + camDist * 0.65, center.z + camDist * 1.15);
+};
+​const pinEl = createLabel(meta.short, anchor, () => {
+if (activateHandler) activateHandler();
+}, true, meta.year);
+​activateHandler = registerMissionUI(meta.short, focusMission, chipsContainer, chipIdx, pinEl);
+​targetObj.traverse((mesh) => {
+if (mesh.isMesh) {
+mesh.userData.onSelectMission = activateHandler;
+interactiveMeshes.push(mesh);
+}
+});
+};
+​missions.forEach((m) => {
+const keywords = (m.keywords || [m.id]).map(normalizeName);
+const matches = [];
+​for (const item of allNamedNodes) {
+if (!item.obj.visible) continue;
+const isMatch = keywords.some((kw) => item.norm === kw || item.norm.includes(kw));
+if (isMatch) {
+const hasAncestorInMatches = matches.some((prev) => {
+let p = item.obj.parent;
+while (p) {
+if (p === prev) return true;
+p = p.parent;
+}
+return false;
+});
+if (!hasAncestorInMatches) {
+matches.push(item.obj);
+}
+}
+}
+​matches.forEach((obj, idx) => {
+const sub = m.subLabels && m.subLabels[idx];
+attachInteractiveObject(obj, {
+...m,
+short: sub ? sub.short : (matches.length > 1 ? ${m.short} #${idx + 1} : m.short),
+name: sub ? sub.name : m.name,
+loc: sub ? sub.loc : m.loc
+});
+});
+});
+​const worldBox = new THREE.Box3().setFromObject(terrainObj || gltfScene);
+const worldSize = new THREE.Vector3();
+const worldCenter = new THREE.Vector3();
+worldBox.getSize(worldSize);
+worldBox.getCenter(worldCenter);
+​const maxSpan = Math.max(worldSize.x, worldSize.z, 12);
+desiredTargetPos.set(worldCenter.x, worldCenter.y, worldCenter.z);
+desiredCameraPos.set(worldCenter.x, worldCenter.y + maxSpan * 0.45, worldCenter.z + maxSpan * 0.65);
+}
+​function buildFallbackSurface(planetKey) {
+const isMars = planetKey === 'marte';
+const missions = SURFACE_MISSIONS[planetKey] || [];
+const chipsContainer = document.getElementById('surface-chips');
+chipsContainer.innerHTML = '';
+chipsContainer.classList.add('visible');
+​if (planetKey === 'sol') {
+const bigSun = new THREE.Mesh(
+new THREE.SphereGeometry(2.6, 64, 48),
+new THREE.MeshBasicMaterial({ map: texSun, wireframe: wireframeEnabled })
+);
+const corona = new THREE.Mesh(
+new THREE.SphereGeometry(3.1, 48, 32),
+new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending })
+);
+surfaceWorldGroup.add(bigSun, corona);
+} else {
+const geo = new THREE.PlaneGeometry(26, 20, 120, 120);
+geo.rotateX(-Math.PI / 2);
+const posAttr = geo.attributes.position;
+for (let i = 0; i < posAttr.count; i++) {
+const x = posAttr.getX(i);
+const z = posAttr.getZ(i);
+posAttr.setY(i, terrainHeightAt(x, z, isMars));
+}
+geo.computeVertexNormals();
+​const groundMesh = new THREE.Mesh(
+geo,
+new THREE.MeshStandardMaterial({
+map: isMars ? texMars : texMoon,
+roughness: 0.94,
+metalness: 0.04,
+wireframe: wireframeEnabled
+})
+);
+surfaceWorldGroup.add(groundMesh);
+}
+​missions.forEach((m, idx) => {
+const [mx, , mz] = m.pos;
+const my = planetKey === 'sol' ? 0 : terrainHeightAt(mx, mz, isMars);
+​let model = null;
+if (planetKey !== 'sol') {
+model = buildSpacecraftModel(m.id);
+model.position.set(mx, my, mz);
+model.traverse(c => { if (c.isMesh) c.material.wireframe = wireframeEnabled; });
+surfaceWorldGroup.add(model);
+}
+​const anchor = new THREE.Object3D();
+anchor.position.set(mx, my + 0.55, mz);
+surfaceWorldGroup.add(anchor);
+​let activateHandler = null;
+const focusMission = () => {
+const prefix = planetKey === 'sol'
+? SUN · MISSION ${m.year}
+: (isMars ? MARS · MISSION ${m.year} : THE MOON · MISSION ${m.year});
+updateEditorialHUD({
+eyebrow: prefix,
+title: m.name,
+desc: m.desc,
+extra: m.extra,
+loc: m.loc,
+year: String(m.year),
+status: m.status,
+archive: BLENDER_GLB_SCENES[planetKey] || 'Built-in 3D View',
+ctaText: null
+});
+desiredCameraPos.set(mx + 1.8, my + 1.5, mz + 2.4);
+desiredTargetPos.set(mx, my + 0.25, mz);
+};
+​const pinEl = createLabel(m.short, anchor, () => {
+if (activateHandler) activateHandler();
+}, true, m.year);
+​activateHandler = registerMissionUI(m.short, focusMission, chipsContainer, idx, pinEl);
+​if (model) {
+model.traverse((mesh) => {
+if (mesh.isMesh) {
+mesh.userData.onSelectMission = activateHandler;
+interactiveMeshes.push(mesh);
+}
+});
+}
+});
+​desiredCameraPos.set(0, 9.5, 14.5);
+desiredTargetPos.set(0, 0, 0);
+}
+​function enterSurfaceMode(planetKey) {
+currentSceneMode = planetKey;
+surfaceWorldGroup.visible = true;
+solarSystemGroup.visible = false;
+activeMixer = null;
+clearLabels();
+​while (surfaceWorldGroup.children.length > 0) {
+surfaceWorldGroup.remove(surfaceWorldGroup.children[0]);
+}
+​const isMars = planetKey === 'marte';
+scene.fog = planetKey === 'sol' ? null : new THREE.FogExp2(isMars ? 0x1c0b05 : 0x02040a, isMars ? 0.022 : 0.024);
+​const dirSun = new THREE.DirectionalLight(isMars ? 0xffedd5 : 0xffffff, 2.8);
+dirSun.position.set(9, 14, 8);
+const fillLight = new THREE.HemisphereLight(0x94a3b8, 0x1e293b, 0.9);
+surfaceWorldGroup.add(dirSun, fillLight);
+​document.getElementById('btn-back-space').classList.add('visible');
+document.getElementById('btn-explore-surface').classList.remove('visible');
+​const glbPath = BLENDER_GLB_SCENES[planetKey];
+const loader = new GLTFLoader();
+​if (glbPath) {
+loader.load(
+glbPath,
+(gltf) => {
+gltf.scene.traverse(child => {
+if (child.isMesh && child.material) {
+child.material.wireframe = wireframeEnabled;
+}
+});
+surfaceWorldGroup.add(gltf.scene);
+if (gltf.animations && gltf.animations.length > 0) {
+activeMixer = new THREE.AnimationMixer(gltf.scene);
+gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+}
+bindGLBScene(gltf.scene, planetKey);
+document.getElementById('spec-archive').textContent = ${glbPath.replace('./', '')} (Blender 3D);
+},
+undefined,
+() => {
+buildFallbackSurface(planetKey);
+document.getElementById('spec-archive').textContent = 'Built-in 3D View';
+}
+);
+} else {
+buildFallbackSurface(planetKey);
+}
+}
+​function returnToSolarSystem() {
+currentSceneMode = 'solar';
+surfaceWorldGroup.visible = false;
+solarSystemGroup.visible = true;
+activeMixer = null;
+scene.fog = null;
+document.getElementById('btn-back-space').classList.remove('visible');
+document.getElementById('surface-chips').classList.remove('visible');
+setupSolarLabels();
+selectSolarTarget('solar');
+}
+​// =========================================================================
+// 7. RAYCASTER: DIRECT CLICK ON 3D MODELS
+// =========================================================================
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+let pointerDownPos = { x: 0, y: 0 };
+​renderer.domElement.addEventListener('pointerdown', (e) => {
+pointerDownPos = { x: e.clientX, y: e.clientY };
+});
+​renderer.domElement.addEventListener('pointermove', (e) => {
+if (currentSceneMode === 'solar' || interactiveMeshes.length === 0) {
+renderer.domElement.style.cursor = 'grab';
+return;
+}
+pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+raycaster.setFromCamera(pointerNDC, camera);
+const hits = raycaster.intersectObjects(interactiveMeshes, false);
+renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'grab';
+});
+​renderer.domElement.addEventListener('pointerup', (e) => {
+const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+if (dist > 6 || currentSceneMode === 'solar' || interactiveMeshes.length === 0) return;
+​pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+raycaster.setFromCamera(pointerNDC, camera);
+const hits = raycaster.intersectObjects(interactiveMeshes, false);
+if (hits.length > 0 && hits[0].object.userData.onSelectMission) {
+hits[0].object.userData.onSelectMission();
+}
+});
+​// =========================================================================
+// 8. UI UPDATES & SMOOTH CAMERA
+// =========================================================================
+const desiredCameraPos = new THREE.Vector3(0, 11.5, 18.5);
+const desiredTargetPos = new THREE.Vector3(0, 0, 0);
+​function updateEditorialHUD(info) {
+document.getElementById('hud-eyebrow').textContent = info.eyebrow;
+document.getElementById('hud-title').textContent = info.title;
+document.getElementById('hud-desc').textContent = info.desc;
+document.getElementById('hud-extra').textContent = info.extra || '';
+document.getElementById('hud-extra').classList.remove('open');
+document.getElementById('spec-loc').textContent = info.loc;
+document.getElementById('spec-year').textContent = info.year;
+document.getElementById('spec-status').textContent = info.status;
+document.getElementById('spec-archive').textContent = info.archive;
+​const cta = document.getElementById('btn-explore-surface');
+if (info.ctaText && currentSceneMode === 'solar') {
+cta.textContent = info.ctaText;
+cta.classList.add('visible');
+cta.onclick = () => enterSurfaceMode(info.surfaceMode);
+} else {
+cta.classList.remove('visible');
+}
+}
+​function selectSolarTarget(key) {
+if (currentSceneMode !== 'solar') {
+returnToSolarSystem();
+}
+currentTargetKey = key;
+document.querySelectorAll('.dock-node').forEach(btn => {
+btn.classList.toggle('active', btn.dataset.target === key);
+});
+updateEditorialHUD(NSSDCA_DATA[key]);
+​if (key === 'solar') {
+desiredCameraPos.set(0, 11.5, 18.5);
+desiredTargetPos.set(0, 0, 0);
+}
+}
+​document.querySelectorAll('.dock-node').forEach(btn => {
+btn.addEventListener('click', () => selectSolarTarget(btn.dataset.target));
+});
+​document.getElementById('btn-home').addEventListener('click', () => selectSolarTarget('solar'));
+document.getElementById('btn-back-space').addEventListener('click', returnToSolarSystem);
+​document.getElementById('btn-read-more').addEventListener('click', () => {
+document.getElementById('hud-extra').classList.toggle('open');
+});
+​document.getElementById('btn-play').addEventListener('click', (e) => {
+isPlaying = !isPlaying;
+e.target.textContent = isPlaying ? '❚❚' : '▶';
+});
+​const speeds = [1, 5, 15];
+let speedIdx = 0;
+document.getElementById('btn-speed').addEventListener('click', (e) => {
+speedIdx = (speedIdx + 1) % speeds.length;
+speedMultiplier = speeds[speedIdx];
+e.target.textContent = ${speedMultiplier}x ORBIT;
+});
+​document.getElementById('year-slider').addEventListener('input', (e) => {
+const yr = parseInt(e.target.value, 10);
+document.getElementById('year-label').textContent = yr;
+if (currentSceneMode !== 'solar') {
+dynamicLabels.forEach((item) => {
+item.el.style.opacity = item.year <= yr ? '1' : '0.2';
+});
+}
+});
+​document.getElementById('btn-wireframe').addEventListener('click', (e) => {
+wireframeEnabled = !wireframeEnabled;
+e.target.classList.toggle('active', wireframeEnabled);
+scene.traverse(obj => {
+if (obj.isMesh && obj.material && obj !== sunGlow) {
+obj.material.wireframe = wireframeEnabled;
+}
+});
+});
+​document.getElementById('glb-loader-input').addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+const url = URL.createObjectURL(file);
+const loader = new GLTFLoader();
+loader.load(url, (gltf) => {
+const lowerName = file.name.toLowerCase();
+const detectedMode = lowerName.includes('luna') ? 'luna' : (lowerName.includes('sol') ? 'sol' : 'marte');
+currentSceneMode = detectedMode;
+surfaceWorldGroup.visible = true;
+solarSystemGroup.visible = false;
+scene.fog = null;
+while (surfaceWorldGroup.children.length > 0) {
+surfaceWorldGroup.remove(surfaceWorldGroup.children[0]);
+}
+clearLabels();
+surfaceWorldGroup.add(gltf.scene);
+if (gltf.animations && gltf.animations.length > 0) {
+activeMixer = new THREE.AnimationMixer(gltf.scene);
+gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+}
+const light = new THREE.DirectionalLight(0xffffff, 2.8);
+light.position.set(9, 14, 8);
+const hemi = new THREE.HemisphereLight(0x94a3b8, 0x1e293b, 0.9);
+surfaceWorldGroup.add(light, hemi);
+​bindGLBScene(gltf.scene, detectedMode);
+​document.getElementById('btn-back-space').classList.add('visible');
+document.getElementById('btn-explore-surface').classList.remove('visible');
+updateEditorialHUD({
+eyebrow: 'PREVIEW · BLENDER .GLB',
+title: file.name.replace(/.[^/.]+$/, ''),
+desc: 'File exported from Blender loaded and automatically calibrated.',
+extra: 'Click directly on any spacecraft or label to inspect each mission.',
+loc: 'Real-Time WebGL Viewer',
+year: '2026',
+status: 'Active Preview',
+archive: file.name,
+ctaText: null
+});
+});
+});
+​// NSSDCA Catalog Modal with Official English Data
+const catalogGrid = document.getElementById('catalog-grid');
+const allCatalogEntries = [
+...SURFACE_MISSIONS.luna.map(m => ({ ...m, zone: 'The Moon', mode: 'luna' })),
+...SURFACE_MISSIONS.marte.map(m => ({ ...m, zone: 'Mars', mode: 'marte' })),
+{ name: 'Dawn Spacecraft', zone: 'Asteroid Belt', year: 2007, desc: NSSDCA_DATA.dawn.desc, targetKey: 'dawn' },
+{ name: 'NEAR Shoemaker', zone: 'Asteroid 433 Eros', year: 1996, desc: NSSDCA_DATA.near.desc, targetKey: 'near' },
+{ name: 'Pioneer 10', zone: 'Outer Space', year: 1972, desc: NSSDCA_DATA.pioneer.desc, targetKey: 'pioneer' },
+{ name: 'Voyager 1', zone: 'Interstellar Space', year: 1977, desc: NSSDCA_DATA.voyager1.desc, targetKey: 'voyager1' },
+{ name: 'Voyager 2', zone: 'Interstellar Space', year: 1977, desc: NSSDCA_DATA.voyager2.desc, targetKey: 'voyager2' },
+{ name: 'Cassini-Huygens', zone: 'Saturn', year: 1997, desc: NSSDCA_DATA.cassini.desc, targetKey: 'cassini' },
+{ name: 'Kepler/K2 Space Telescope', zone: 'Heliocentric Orbit', year: 2009, desc: NSSDCA_DATA.kepler.desc, targetKey: 'kepler' }
+];
+allCatalogEntries.forEach(item => {
+const card = document.createElement('div');
+card.className = 'cat-card';
+card.innerHTML = <small>${item.zone} · ${item.year}</small><h4>${item.name}</h4><p>${item.desc}</p>;
+card.onclick = () => {
+document.getElementById('catalog-modal').classList.remove('open');
+if (item.mode) {
+enterSurfaceMode(item.mode);
+} else {
+selectSolarTarget(item.targetKey);
+}
+};
+catalogGrid.appendChild(card);
+});
+​document.getElementById('btn-catalog').onclick = () => document.getElementById('catalog-modal').classList.add('open');
+document.getElementById('btn-close-catalog').onclick = () => document.getElementById('catalog-modal').classList.remove('open');
+​// =========================================================================
+// 9. MAIN ANIMATION LOOP
+// =========================================================================
+setupSolarLabels();
+const clock = new THREE.Clock();
+​window.addEventListener('resize', () => {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+});
+​const worldPosVec = new THREE.Vector3();
+const projVec = new THREE.Vector3();
+​function animate() {
+requestAnimationFrame(animate);
+const delta = clock.getDelta();
+​if (activeMixer && isPlaying) {
+activeMixer.update(delta * speedMultiplier);
+}
+​if (isPlaying && currentSceneMode === 'solar') {
+const dt = 0.0022 * speedMultiplier;
+earthOrbitPivot.rotation.y += dt;
+moonOrbitPivot.rotation.y += dt * 6.5;
+keplerPivot.rotation.y += dt * 0.96;
+marsOrbitPivot.rotation.y += dt * 0.53;
+dawnOrbitPivot.rotation.y += dt * 0.28;
+nearPivot.rotation.y += dt * 0.42;
+earthMesh.rotation.y += 0.01;
+marsMesh.rotation.y += 0.009;
+}
+​if (currentSceneMode === 'solar' && currentTargetKey !== 'solar' && TRACK_TARGETS[currentTargetKey]) {
+TRACK_TARGETS[currentTargetKey].getWorldPosition(worldPosVec);
+controls.target.lerp(worldPosVec, 0.08);
+const offset = currentTargetKey === 'luna'
+? new THREE.Vector3(1.1, 0.8, 1.5)
+: (currentTargetKey === 'sol' ? new THREE.Vector3(0, 2.2, 5.2) : new THREE.Vector3(1.8, 1.2, 2.4));
+desiredCameraPos.copy(worldPosVec).add(offset);
+camera.position.lerp(desiredCameraPos, 0.06);
+} else {
+controls.target.lerp(desiredTargetPos, 0.08);
+camera.position.lerp(desiredCameraPos, 0.06);
+}
+​controls.update();
+​dynamicLabels.forEach(({ el, obj3D }) => {
+obj3D.getWorldPosition(projVec);
+projVec.project(camera);
+if (projVec.z < 1) {
+const sx = (projVec.x * 0.5 + 0.5) * window.innerWidth;
+const sy = (-projVec.y * 0.5 + 0.5) * window.innerHeight;
+el.style.left = ${sx}px;
+el.style.top = ${sy}px;
+el.style.display = 'block';
+} else {
+el.style.display = 'none';
+}
+});
+​renderer.render(scene, camera);
+}
+​animate();
+</script>
+</body>
+</html>
