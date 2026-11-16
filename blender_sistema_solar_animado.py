@@ -220,4 +220,8 @@ cam_obj.rotation_euler = (math.radians(60), 0, 0)
 scene.collection.objects.link(cam_obj)
 scene.camera = cam_obj
 
+scene["ai_generated"] = "True - Assisted by Google Gemini (Version Hydrogen 4)"
+scene["nasa_space_apps_2026"] = "Forgotten Giants - Team Forgotten Giants (NSSDCA)"
+
+
 print("Sistema Solar animado creado. Presiona BARRA ESPACIADORA para reproducir.")
