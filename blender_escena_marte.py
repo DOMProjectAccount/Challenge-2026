@@ -1,3 +1,26 @@
+"""
+Blender 3D Scene Generation Script - NASA Space Apps Challenge 2026.
+Project: Forgotten Giants (Official NASA NSSDCA Spacecraft Catalog).
+
+AI / Super Intelligence (SI) Disclosure:
+This script was generated with assistance from Google Gemini (Version Hydrogen 4) to 
+build procedural planetary geometry, lighting, and mission anchors. All code and spatial 
+parameters were reviewed and validated by Team Forgotten Giants.
+"""
+
+__author__ = "Team Forgotten Giants"
+__credits__ = ["Team Forgotten Giants", "Google Gemini - Version Hydrogen 4 (Code Generation Assistance)"]
+__ai_disclosure__ = {
+    "si_generated": True,
+    "tool": "Google Gemini",
+    "version": "Hydrogen 4",
+    "project": "Forgotten Giants",
+    "challenge": "NASA Space Apps Challenge 2026",
+    "human_verified": True
+}
+
+
+
 import bpy
 import math
 
