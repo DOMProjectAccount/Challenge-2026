@@ -13,11 +13,11 @@ Visualización interactiva 3D del catálogo oficial **NSSDCA** de la NASA, inspi
 3. Abre el enlace generado por GitHub Pages para presentar tu proyecto.
 
 ## AI / Super Intelligence (SI) Transparency Disclosure
-In compliance with the NASA Space Apps Challenge guidelines, we disclose the use of Super Intelligence (SI) tools during the development of this project:
+In compliance with the **NASA Space Apps Challenge 2026** guidelines, **Team Forgotten Giants** discloses the use of Super Intelligence (SI) tools during the development of this project:
 
-* **Tools Used:** Google Gemini (Versión Hydrogen 4)
+* **Tools Used:** Google Gemini (Version Hydrogen 4)
 * **Scope of Generation:** 
-  * **`index.html`:** Assisted in generating the interactive 3D web interface, timeline controls (1960–2026), and `.glb` model loader.
-  * **`blender_sistema_solar_animado.py`, `blender_escena_luna.py`, `blender_escena_marte.py`:** Generated the Python scripts for Blender procedural shaders, terrain modifiers, orbital animations, and `AgX` lighting setups.
-  * **`README.md` & `.glb` scenes:** Assisted in structuring the documentation and exporting the base 3D scenes (`escena_la_luna.glb`, `escena_marte.glb`, `escena_sistema_solar.glb`).
-* **Human Verification & Data:** All historical mission concepts, NASA NSSDCA catalog selections, orbital/surface anchor placements, and final code audits were designed and verified by the team.
+  * **`index.html`:** Assisted in generating the interactive 3D web interface, historical timeline controls (1967–2026), wireframe mode, and custom `.glb` model loader.
+  * **`blender_sistema_solar_animado.py`, `blender_escena_luna.py`, `blender_escena_marte.py`:** Assisted in generating Python scripts for Blender procedural shaders, planetary terrain modifiers, orbital animations, and `AgX` lighting setups.
+  * **`README.md` & `.glb` scenes:** Assisted in structuring the technical documentation and exporting base 3D scenes (`escena_la_luna.glb`, `escena_marte.glb`, `escena_sistema_solar.glb`).
+* **Human Verification & Data:** All historical mission concepts, selection of the 10 NASA NSSDCA catalog spacecraft, orbital/surface anchor placements, and final code audits were designed, directed, and validated by Team Forgotten Giants.
