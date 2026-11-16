@@ -11,3 +11,13 @@ Visualización interactiva 3D del catálogo oficial **NSSDCA** de la NASA, inspi
 1. Sube todos los archivos sueltos (descomprimidos) a tu repositorio público en GitHub.
 2. Ve a **Settings > Pages**, selecciona la rama **`main`** y carpeta **`/ (root)`**, y guarda.
 3. Abre el enlace generado por GitHub Pages para presentar tu proyecto.
+
+## AI / Super Intelligence (SI) Transparency Disclosure
+In compliance with the NASA Space Apps Challenge guidelines, we disclose the use of Super Intelligence (SI) tools during the development of this project:
+
+* **Tools Used:** Google Gemini (Versión Hydrogen 4)
+* **Scope of Generation:** 
+  * **`index.html`:** Assisted in generating the interactive 3D web interface, timeline controls (1960–2026), and `.glb` model loader.
+  * **`blender_sistema_solar_animado.py`, `blender_escena_luna.py`, `blender_escena_marte.py`:** Generated the Python scripts for Blender procedural shaders, terrain modifiers, orbital animations, and `AgX` lighting setups.
+  * **`README.md` & `.glb` scenes:** Assisted in structuring the documentation and exporting the base 3D scenes (`escena_la_luna.glb`, `escena_marte.glb`, `escena_sistema_solar.glb`).
+* **Human Verification & Data:** All historical mission concepts, NASA NSSDCA catalog selections, orbital/surface anchor placements, and final code audits were designed and verified by the team.
